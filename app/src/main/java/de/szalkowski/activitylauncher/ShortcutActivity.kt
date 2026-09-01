@@ -22,13 +22,21 @@ class ShortcutActivity : AppCompatActivity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
+            val action = intent.action
+            if (
+                action != IconCreatorService.INTENT_LAUNCH_SHORTCUT &&
+                action != IconCreatorService.INTENT_LAUNCH_ROOT_SHORTCUT
+            ) {
+                return
+            }
+
             val launchIntent =
                 Intent.parseUri(intent.getStringExtra(IconCreatorService.INTENT_EXTRA_INTENT), 0)
             val signature =
                 intent.getStringExtra(IconCreatorService.INTENT_EXTRA_SIGNATURE).orEmpty()
-            val asRoot = intent.action == IconCreatorService.INTENT_LAUNCH_ROOT_SHORTCUT
+            val asRoot = action == IconCreatorService.INTENT_LAUNCH_ROOT_SHORTCUT
 
-            if (asRoot && !signingService.validateIntentSignature(launchIntent, signature)) {
+            if (!signingService.validateIntentSignature(launchIntent, signature)) {
                 return
             }
 
@@ -44,4 +52,3 @@ class ShortcutActivity : AppCompatActivity() {
         }
     }
 }
-

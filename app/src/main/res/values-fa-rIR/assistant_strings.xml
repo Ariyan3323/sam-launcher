@@ -1,0 +1,26 @@
+<resources>
+    <string name="assistant_name">دستیار رعد</string>
+    <string name="assistant_bubble_description">دستیار متحرک</string>
+    <string name="assistant_welcome">سلام، من رعد هستم. از من بخواه برنامه‌ای را باز کنم، در وب جست‌وجو کنم یا باتری را بررسی کنم.</string>
+    <string name="assistant_command_hint">دستور خود را بنویسید</string>
+    <string name="assistant_voice">صدا</string>
+    <string name="assistant_send">بپرس از رعد</string>
+    <string name="assistant_voice_prompt">چه کاری برایتان انجام بدهم؟</string>
+    <string name="assistant_microphone_required">برای فرمان صوتی، دسترسی میکروفون لازم است.</string>
+    <string name="assistant_voice_unavailable">تشخیص صدا در این دستگاه در دسترس نیست.</string>
+    <string name="assistant_browser_unavailable">مرورگری برای انجام این جست‌وجو در دسترس نیست.</string>
+    <string name="assistant_appearance">ظاهر</string>
+    <string name="assistant_appearance_changed">ظاهر رعد تغییر کرد.</string>
+    <string name="assistant_opening_settings">تنظیمات اندروید باز می‌شود.</string>
+    <string name="assistant_help">مثال: باز کن &lt;نام برنامه&gt;، جستجو &lt;موضوع&gt;، باتری، پاک کردن کش یا تنظیمات.</string>
+    <string name="assistant_widget_title">با رعد صحبت کن</string>
+    <string name="assistant_time">ساعت %1$d و %2$02d دقیقه و %3$02d ثانیه است.</string>
+    <string name="assistant_clock_code_saved">نمونه‌کد ساعت در %1$s ذخیره شد.</string>
+    <string name="assistant_clock_code_export_failed">نمونه‌کد ساعت ذخیره نشد.</string>
+    <string name="assistant_battery_status">باتری: %1$d%%</string>
+    <string name="assistant_low_battery">باتری کم است (%1$d%%). شارژر را وصل کنید.</string>
+    <string name="assistant_app_not_found">%1$s پیدا نشد.</string>
+    <string name="assistant_opening">%1$s در حال باز شدن است.</string>
+    <string name="assistant_searching">در حال جست‌وجوی %1$s در وب.</string>
+    <string name="assistant_cache_guidance">کش خود دستیار پاک شد. اندروید به لانچرها اجازهٔ پاک‌کردن کش برنامه‌های دیگر را نمی‌دهد؛ تنظیمات حافظه باز شد تا آن را ایمن مدیریت کنید.</string>
+</resources>

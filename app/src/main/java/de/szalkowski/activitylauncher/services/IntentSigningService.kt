@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Base64
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -39,7 +41,10 @@ class IntentSigningServiceImpl @Inject constructor(@ApplicationContext context: 
 
     override fun validateIntentSignature(intent: Intent, signature: String): Boolean {
         val compSignature = signIntent(intent)
-        return signature == compSignature
+        return MessageDigest.isEqual(
+            signature.toByteArray(StandardCharsets.UTF_8),
+            compSignature.toByteArray(StandardCharsets.UTF_8)
+        )
     }
 
     companion object {
@@ -55,4 +60,3 @@ class IntentSigningServiceImpl @Inject constructor(@ApplicationContext context: 
         }
     }
 }
-

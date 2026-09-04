@@ -30,13 +30,7 @@
             android:name=".AssistantActivity"
             android:exported="true"
             android:label="@string/assistant_name"
-            android:theme="@style/Theme.ActivityLauncher">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.ActivityLauncher" />
         <receiver
             android:name=".RaadWidgetProvider"
             android:exported="false">

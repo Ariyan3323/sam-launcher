@@ -2,7 +2,6 @@ package de.szalkowski.activitylauncher
 
 import android.Manifest
 import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
@@ -13,7 +12,6 @@ import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.view.inputmethod.EditorInfo
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -21,7 +19,7 @@ import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import java.util.Calendar
 import java.util.Locale
 
-/** Home-screen assistant with local commands, voice transcription and safe Android actions. */
+/** Local assistant with command input, voice transcription and safe Android actions. */
 class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var binding: ActivityAssistantBinding
     private var batteryLevel = -1
@@ -94,7 +92,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            textToSpeech.language = Locale("fa", "IR")
+            val result = textToSpeech.setLanguage(Locale("fa", "IR"))
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                textToSpeech.language = Locale.getDefault()
+            }
         }
     }
 
@@ -125,12 +126,12 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun runCommand(rawCommand: String) {
         binding.command.setText(rawCommand)
-        val command = rawCommand.trim().lowercase(Locale.getDefault())
+        val command = rawCommand.trim().lowercase(Locale.ROOT)
         when {
-            command.startsWith("open ") || command.startsWith("باز کن ") ->
-                openApp(rawCommand.substringAfter(' ').trim())
-            command.startsWith("search ") || command.startsWith("جستجو ") ->
-                searchWeb(rawCommand.substringAfter(' ').trim())
+            command.startsWith("open ") -> openApp(rawCommand.removePrefixIgnoreCase("open ").trim())
+            command.startsWith("باز کن ") -> openApp(rawCommand.removePrefix("باز کن ").trim())
+            command.startsWith("search ") -> searchWeb(rawCommand.removePrefixIgnoreCase("search ").trim())
+            command.startsWith("جستجو ") -> searchWeb(rawCommand.removePrefix("جستجو ").trim())
             command.contains("battery") || command.contains("باتری") ->
                 respond(getString(R.string.assistant_battery_status, batteryLevel))
             command.contains("time") || command.contains("ساعت") -> respond(currentTime())
@@ -144,9 +145,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun openApp(query: String) {
-        val normalized = query.lowercase(Locale.getDefault())
+        val normalized = query.trim().lowercase(Locale.ROOT)
+        if (normalized.isBlank()) {
+            respond(getString(R.string.assistant_help))
+            return
+        }
         val match = packageManager.getInstalledApplications(PackageManager.MATCH_ALL).firstOrNull {
-            it.loadLabel(packageManager).toString().lowercase(Locale.getDefault()).contains(normalized)
+            it.loadLabel(packageManager).toString().lowercase(Locale.ROOT).contains(normalized)
         }
         val launchIntent = match?.let { packageManager.getLaunchIntentForPackage(it.packageName) }
         if (launchIntent == null) respond(getString(R.string.assistant_app_not_found, query))
@@ -181,8 +186,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun openSettings() {
-        startActivity(Intent(Settings.ACTION_SETTINGS))
-        respond(getString(R.string.assistant_opening_settings))
+        val settingsIntent = Intent(Settings.ACTION_SETTINGS)
+        if (settingsIntent.resolveActivity(packageManager) != null) {
+            startActivity(settingsIntent)
+            respond(getString(R.string.assistant_opening_settings))
+        } else {
+            respond(getString(R.string.assistant_browser_unavailable))
+        }
     }
 
     private fun currentTime(): String {
@@ -206,9 +216,11 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun respond(message: String) {
         binding.response.text = message
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         if (::textToSpeech.isInitialized) {
             textToSpeech.speak(message, TextToSpeech.QUEUE_FLUSH, null, "raad-response")
         }
     }
+
+    private fun String.removePrefixIgnoreCase(prefix: String): String =
+        if (startsWith(prefix, ignoreCase = true)) substring(prefix.length) else this
 }

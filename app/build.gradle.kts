@@ -11,7 +11,8 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = System.getenv("APPID") ?: "de.szalkowski.activitylauncher"
+        // Stable package name for local/debug installs.
+        applicationId = System.getenv("APPID") ?: "com.ariyan3323.samlauncher"
         minSdk = 16
         targetSdk = 36
         versionCode = 64

@@ -63,6 +63,10 @@ Each step is reported in the final response, and unknown tools or failed tool ca
 
 These first-phase controls are intentionally local and lightweight. They do not change system settings or silence notifications without an explicit implementation and user permission.
 
+### Local personal memory
+
+Sam supports an explicitly user-controlled on-device memory. Use `به خاطر بسپار ...` or `remember ...` to save a fact, `حافظه من` or `show memory` to review saved facts, and `حافظه را پاک کن` or `clear memory` to delete them. The store is capped at 30 facts, persists locally, and is not sent to Gemini or any other network service by the memory feature.
+
 ### Optional Gemini agent mode
 
 When `GEMINI_API_KEY` is configured at build time, the assistant can use the optional Gemini-powered agent mode. This mode includes local tool registration, bounded tool iterations, short conversation memory, device context, and the same safe Android actions exposed by the assistant. Without a configured key, Sam falls back to the local command experience.

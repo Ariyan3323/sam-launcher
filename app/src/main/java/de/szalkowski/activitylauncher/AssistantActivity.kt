@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import de.szalkowski.activitylauncher.agent.AgentConfig
+import de.szalkowski.activitylauncher.agent.PersonalMemory
 import de.szalkowski.activitylauncher.agent.SamAgent
 import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var textToSpeech: TextToSpeech
     private lateinit var codeWriter: CodeWriter
     private lateinit var agent: SamAgent
+    private lateinit var personalMemory: PersonalMemory
 
     private val voiceInput =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -83,11 +85,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 runOnUiThread { binding.voiceStatus.setText(R.string.assistant_voice_ready) }
             }
 
+            @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
             override fun onError(utteranceId: String?) {
                 runOnUiThread { binding.voiceStatus.setText(R.string.assistant_voice_error) }
             }
         })
         codeWriter = CodeWriter(this)
+        personalMemory = PersonalMemory(this)
         agent = SamAgent(this, AgentConfig(name = "سام", geminiApiKey = BuildConfig.GEMINI_API_KEY))
         updateAgentStatus()
         binding.command.setOnEditorActionListener { _, actionId, _ ->
@@ -225,6 +229,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("work mode") || command.contains("حالت کار") -> activateSmartMode("کار")
             command.contains("driving mode") || command.contains("حالت رانندگی") -> activateSmartMode("رانندگی")
             command.contains("sleep mode") || command.contains("حالت خواب") -> activateSmartMode("خواب")
+            command.startsWith("remember ") -> rememberFact(rawCommand.removePrefixIgnoreCase("remember ").trim())
+            command.startsWith("به خاطر بسپار ") -> rememberFact(rawCommand.removePrefix("به خاطر بسپار ").trim())
+            command.contains("show memory") || command.contains("حافظه من") || command.contains("چه چیزهایی را به خاطر داری") -> showMemory()
+            command.contains("clear memory") || command.contains("پاک کردن حافظه") || command.contains("حافظه را پاک کن") -> clearMemory()
             command.contains("clock code") || command.contains("کد ساعت") -> exportClockCode()
             command.contains("clear cache") || (command.contains("پاک") && command.contains("کش")) -> openStorageSettings()
             command.contains("settings") || command.contains("تنظیمات") -> openSettings()
@@ -292,6 +300,21 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val now = Calendar.getInstance()
         val minute = String.format(Locale.getDefault(), "%02d", now.get(Calendar.MINUTE))
         return "داشبورد امروز: ساعت ${now.get(Calendar.HOUR_OF_DAY)}:$minute؛ باتری $batteryLevel٪؛ حالت فعال: $mode."
+    }
+
+    private fun rememberFact(fact: String) {
+        if (personalMemory.remember(fact)) respond("به خاطر سپردم؛ این اطلاعات فقط روی دستگاه ذخیره شد.")
+        else respond("چیزی برای ذخیره‌کردن پیدا نکردم.")
+    }
+
+    private fun showMemory() {
+        val facts = personalMemory.facts()
+        respond(if (facts.isEmpty()) "حافظه شخصی خالی است." else "حافظه شخصی:\n${facts.mapIndexed { index, fact -> "${index + 1}. $fact" }.joinToString("\n")}")
+    }
+
+    private fun clearMemory() {
+        personalMemory.clear()
+        respond("حافظه شخصی کاملاً پاک شد.")
     }
 
     private fun exportClockCode() {

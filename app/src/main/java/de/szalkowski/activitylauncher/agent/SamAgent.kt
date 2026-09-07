@@ -287,6 +287,9 @@ class SamAgent(
         toolRegistry.register(EmailComposeTool(context))
         toolRegistry.register(ActivateModeTool(context))
         toolRegistry.register(DailyDashboardTool(context))
+        toolRegistry.register(RememberFactTool(context))
+        toolRegistry.register(ShowMemoryTool(context))
+        toolRegistry.register(ClearMemoryTool(context))
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {
@@ -666,6 +669,41 @@ class DailyDashboardTool(private val context: Context) : Tool {
         val now = Calendar.getInstance()
         val time = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
         return ToolResult(true, "داشبورد امروز: ساعت $time؛ باتری $battery٪؛ حالت فعال: $mode.")
+    }
+}
+
+class RememberFactTool(private val context: Context) : Tool {
+    override val name = "remember_fact"
+    override val description = "ذخیره یک یادآوری شخصی فقط روی همین دستگاه"
+    override val parameters = listOf(ParamSchema("fact", "string", "چیزی که باید به خاطر سپرده شود", true))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val fact = args.optString("fact").trim()
+        if (!PersonalMemory(context).remember(fact)) return ToolResult(false, "متنی برای ذخیره‌کردن دریافت نشد.")
+        return ToolResult(true, "به خاطر سپردم؛ این اطلاعات فقط روی دستگاه ذخیره شد.")
+    }
+}
+
+class ShowMemoryTool(private val context: Context) : Tool {
+    override val name = "show_personal_memory"
+    override val description = "نمایش چیزهایی که کاربر خواسته سام به خاطر بسپارد"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val facts = PersonalMemory(context).facts()
+        return if (facts.isEmpty()) ToolResult(true, "حافظه شخصی خالی است.")
+        else ToolResult(true, "حافظه شخصی:\n${facts.mapIndexed { index, fact -> "${index + 1}. $fact" }.joinToString("\n")}")
+    }
+}
+
+class ClearMemoryTool(private val context: Context) : Tool {
+    override val name = "clear_personal_memory"
+    override val description = "پاک کردن کامل حافظه شخصی ذخیره‌شده روی دستگاه"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        PersonalMemory(context).clear()
+        return ToolResult(true, "حافظه شخصی کاملاً پاک شد.")
     }
 }
 

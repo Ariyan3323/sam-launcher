@@ -20,6 +20,7 @@
     <string name="assistant_opening_settings">Opening Android settings.</string>
     <string name="assistant_help">Try: open &lt;app&gt;, search &lt;topic&gt;, battery, clear cache, or settings.</string>
     <string name="assistant_widget_title">Talk to Raad</string>
+    <string name="assistant_widget_hint">Tap to ask Sam</string>
     <string name="assistant_time">It is %1$d:%2$02d and %3$02d seconds.</string>
     <string name="assistant_clock_code_saved">Clock example saved to %1$s</string>
     <string name="assistant_clock_code_export_failed">The clock example could not be exported.</string>

@@ -13,9 +13,17 @@ import android.view.animation.AccelerateDecelerateInterpolator
 
 /** A small, always-on-screen assistant avatar that reacts while waiting for commands. */
 class AssistantBubbleView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
+    enum class State { READY, LISTENING, THINKING, SPEAKING, ERROR }
+
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var phase = 0f
     private var palette = 0
+    private var state = State.READY
+
+    fun setState(next: State) {
+        state = next
+        invalidate()
+    }
 
     fun nextAppearance() {
         palette = (palette + 1) % 3
@@ -44,13 +52,20 @@ class AssistantBubbleView(context: Context, attrs: AttributeSet? = null) : View(
         val size = minOf(width, height).toFloat()
         val centerX = width / 2f
         val centerY = height / 2f + (phase - .5f) * size * .06f
-        val colors = arrayOf(
-            intArrayOf(Color.rgb(93, 88, 240), Color.rgb(18, 190, 210)),
-            intArrayOf(Color.rgb(220, 77, 145), Color.rgb(125, 74, 235)),
-            intArrayOf(Color.rgb(242, 151, 55), Color.rgb(231, 72, 86))
-        )[palette]
+        val colors = when (state) {
+            State.READY -> arrayOf(
+                intArrayOf(Color.rgb(93, 88, 240), Color.rgb(18, 190, 210)),
+                intArrayOf(Color.rgb(220, 77, 145), Color.rgb(125, 74, 235)),
+                intArrayOf(Color.rgb(242, 151, 55), Color.rgb(231, 72, 86))
+            )[palette]
+            State.LISTENING -> intArrayOf(Color.rgb(0, 196, 180), Color.rgb(42, 238, 210))
+            State.THINKING -> intArrayOf(Color.rgb(88, 75, 220), Color.rgb(160, 92, 244))
+            State.SPEAKING -> intArrayOf(Color.rgb(24, 173, 232), Color.rgb(111, 243, 255))
+            State.ERROR -> intArrayOf(Color.rgb(218, 62, 91), Color.rgb(247, 126, 93))
+        }
         paint.shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), colors[0], colors[1], Shader.TileMode.CLAMP)
-        canvas.drawCircle(centerX, centerY, size * .43f, paint)
+        val radius = size * (.43f + if (state == State.LISTENING || state == State.SPEAKING) phase * .025f else 0f)
+        canvas.drawCircle(centerX, centerY, radius, paint)
         paint.shader = null
 
         paint.color = Color.WHITE

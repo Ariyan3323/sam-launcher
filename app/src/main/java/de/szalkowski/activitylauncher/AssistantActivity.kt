@@ -49,6 +49,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val phrase = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
             if (phrase != null) {
                 binding.voiceStatus.setText(R.string.assistant_voice_processing)
+                binding.bubble.setState(AssistantBubbleView.State.THINKING)
                 runCommand(phrase)
             } else {
                 binding.voiceStatus.setText(R.string.assistant_voice_no_result)
@@ -59,6 +60,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private val microphonePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startVoiceInput()
         else {
+            binding.bubble.setState(AssistantBubbleView.State.ERROR)
             binding.voiceStatus.setText(R.string.assistant_voice_error)
             respond(getString(R.string.assistant_microphone_required))
         }
@@ -81,16 +83,25 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         textToSpeech = TextToSpeech(this, this)
         textToSpeech.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {
-                runOnUiThread { binding.voiceStatus.setText(R.string.assistant_voice_speaking) }
+                runOnUiThread {
+                    binding.bubble.setState(AssistantBubbleView.State.SPEAKING)
+                    binding.voiceStatus.setText(R.string.assistant_voice_speaking)
+                }
             }
 
             override fun onDone(utteranceId: String?) {
-                runOnUiThread { binding.voiceStatus.setText(R.string.assistant_voice_ready) }
+                runOnUiThread {
+                    binding.bubble.setState(AssistantBubbleView.State.READY)
+                    binding.voiceStatus.setText(R.string.assistant_voice_ready)
+                }
             }
 
             @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
             override fun onError(utteranceId: String?) {
-                runOnUiThread { binding.voiceStatus.setText(R.string.assistant_voice_error) }
+                runOnUiThread {
+                    binding.bubble.setState(AssistantBubbleView.State.ERROR)
+                    binding.voiceStatus.setText(R.string.assistant_voice_error)
+                }
             }
         })
         codeWriter = CodeWriter(this)
@@ -154,6 +165,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun startVoiceInput() {
+        binding.bubble.setState(AssistantBubbleView.State.LISTENING)
         binding.voiceStatus.setText(R.string.assistant_voice_listening)
         val recognitionIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -181,6 +193,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun runAgentCommand(rawCommand: String) {
+        binding.bubble.setState(AssistantBubbleView.State.THINKING)
         binding.agentStatus.setText(R.string.assistant_thinking)
         respond(getString(R.string.assistant_thinking))
         lifecycleScope.launch(Dispatchers.IO) {
@@ -188,6 +201,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 .onSuccess { output ->
                     withContext(Dispatchers.Main) {
                         updateAgentStatus(output.success)
+                        binding.bubble.setState(if (output.success) AssistantBubbleView.State.READY else AssistantBubbleView.State.ERROR)
                         val tools = output.executedTools.distinct()
                         val reply = if (tools.isEmpty()) output.reply
                         else "${output.reply}\n\n${getString(R.string.assistant_agent_tools, tools.joinToString(", "))}"
@@ -197,6 +211,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 .onFailure { error ->
                     withContext(Dispatchers.Main) {
                         updateAgentStatus(false)
+                        binding.bubble.setState(AssistantBubbleView.State.ERROR)
                         respond(getString(R.string.assistant_agent_error) + "\n" + (error.message ?: "Unknown error"))
                     }
                 }

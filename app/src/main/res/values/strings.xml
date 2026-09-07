@@ -4,6 +4,12 @@
     <string name="assistant_welcome">Hi, I am Raad. Ask me to open an app, search the web, or check the battery.</string>
     <string name="assistant_command_hint">Type a command</string>
     <string name="assistant_voice">Voice</string>
+    <string name="assistant_voice_ready">Voice ready</string>
+    <string name="assistant_voice_listening">Listening…</string>
+    <string name="assistant_voice_processing">Processing voice command…</string>
+    <string name="assistant_voice_speaking">Speaking…</string>
+    <string name="assistant_voice_error">Voice input is unavailable</string>
+    <string name="assistant_voice_no_result">I did not hear a command.</string>
     <string name="assistant_send">Ask Raad</string>
     <string name="assistant_voice_prompt">What can I do for you?</string>
     <string name="assistant_microphone_required">Microphone access is needed for voice commands.</string>

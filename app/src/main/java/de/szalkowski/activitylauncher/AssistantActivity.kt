@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.view.inputmethod.EditorInfo
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -41,11 +42,21 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private val voiceInput =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             val phrase = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-            if (phrase != null) runCommand(phrase)
+            if (phrase != null) {
+                binding.voiceStatus.setText(R.string.assistant_voice_processing)
+                runCommand(phrase)
+            } else {
+                binding.voiceStatus.setText(R.string.assistant_voice_no_result)
+                respond(getString(R.string.assistant_voice_no_result))
+            }
         }
 
     private val microphonePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) startVoiceInput() else respond(getString(R.string.assistant_microphone_required))
+        if (granted) startVoiceInput()
+        else {
+            binding.voiceStatus.setText(R.string.assistant_voice_error)
+            respond(getString(R.string.assistant_microphone_required))
+        }
     }
 
     private val batteryReceiver = object : BroadcastReceiver() {
@@ -63,6 +74,19 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding = ActivityAssistantBinding.inflate(layoutInflater)
         setContentView(binding.root)
         textToSpeech = TextToSpeech(this, this)
+        textToSpeech.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {
+                runOnUiThread { binding.voiceStatus.setText(R.string.assistant_voice_speaking) }
+            }
+
+            override fun onDone(utteranceId: String?) {
+                runOnUiThread { binding.voiceStatus.setText(R.string.assistant_voice_ready) }
+            }
+
+            override fun onError(utteranceId: String?) {
+                runOnUiThread { binding.voiceStatus.setText(R.string.assistant_voice_error) }
+            }
+        })
         codeWriter = CodeWriter(this)
         agent = SamAgent(this, AgentConfig(name = "سام", geminiApiKey = BuildConfig.GEMINI_API_KEY))
         updateAgentStatus()
@@ -102,7 +126,12 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             val result = textToSpeech.setLanguage(Locale("fa", "IR"))
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) textToSpeech.language = Locale.getDefault()
+            textToSpeech.setSpeechRate(0.95f)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                textToSpeech.language = Locale.getDefault()
+            }
+        } else {
+            binding.voiceStatus.setText(R.string.assistant_voice_error)
         }
     }
 
@@ -117,8 +146,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun startVoiceInput() {
+        binding.voiceStatus.setText(R.string.assistant_voice_listening)
         val recognitionIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fa-IR")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fa-IR")
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.assistant_voice_prompt))
         }
         if (recognitionIntent.resolveActivity(packageManager) == null) {
@@ -248,7 +282,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun respond(message: String) {
         binding.response.text = message
-        if (::textToSpeech.isInitialized) textToSpeech.speak(message, TextToSpeech.QUEUE_FLUSH, null, "raad-response")
+        if (::textToSpeech.isInitialized && message.isNotBlank()) {
+            binding.voiceStatus.setText(R.string.assistant_voice_speaking)
+            textToSpeech.speak(message, TextToSpeech.QUEUE_FLUSH, null, "raad-response")
+        }
     }
 
     private fun String.removePrefixIgnoreCase(prefix: String): String = if (startsWith(prefix, ignoreCase = true)) substring(prefix.length) else this

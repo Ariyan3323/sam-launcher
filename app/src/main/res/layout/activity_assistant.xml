@@ -37,6 +37,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/batteryStatus" />
 
+    <TextView
+        android:id="@+id/voiceStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/assistant_voice_ready"
+        android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+        android:textColor="?attr/colorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/agentStatus" />
+
     <de.szalkowski.activitylauncher.AnalogClockView
         android:id="@+id/analogClock"
         android:layout_width="150dp"
@@ -44,7 +56,7 @@
         android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/agentStatus" />
+        app:layout_constraintTop_toBottomOf="@id/voiceStatus" />
 
     <TextView
         android:id="@+id/response"

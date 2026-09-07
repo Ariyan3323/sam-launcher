@@ -279,6 +279,12 @@ class SamAgent(
         toolRegistry.register(ListAppsTool(context))
         toolRegistry.register(FlashlightTool(context))
         toolRegistry.register(SettingsTool(context))
+        toolRegistry.register(PhoneCallTool(context))
+        toolRegistry.register(SmsInboxTool(context))
+        toolRegistry.register(SmsComposeTool(context))
+        toolRegistry.register(CallLogTool(context))
+        toolRegistry.register(VoicemailTool(context))
+        toolRegistry.register(EmailComposeTool(context))
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {
@@ -521,4 +527,113 @@ class SettingsTool(private val context: Context) : Tool {
             ToolResult(false, "بخش $section در دسترس نیست.")
         }
     }
+}
+
+/** Opens the dialer with a number; the user must press the call button. */
+class PhoneCallTool(private val context: Context) : Tool {
+    override val name = "call_phone"
+    override val description = "باز کردن شماره‌گیر با شماره مشخص؛ تماس نهایی فقط با تأیید کاربر انجام می‌شود"
+    override val parameters = listOf(ParamSchema("phone_number", "string", "شماره تلفن", true))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val number = args.optString("phone_number").trim()
+        if (number.isBlank()) return ToolResult(false, "شماره تلفن وارد نشده است.")
+        val intent = Intent(Intent.ACTION_DIAL, android.net.Uri.parse("tel:${android.net.Uri.encode(number)}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "شماره‌گیر برای $number باز شد؛ برای تماس دکمه تماس را بزنید.")
+    }
+}
+
+/** Opens the default messaging application's inbox without reading SMS content directly. */
+class SmsInboxTool(private val context: Context) : Tool {
+    override val name = "read_sms"
+    override val description = "باز کردن صندوق پیامک برنامه پیش‌فرض برای خواندن پیام‌ها"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val intent = Intent(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_APP_MESSAGING)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "برنامه پیامک پیش‌فرض باز شد؛ پیام‌ها را آنجا بخوانید.")
+    }
+}
+
+/** Opens a prefilled SMS composer; the user must review and send it. */
+class SmsComposeTool(private val context: Context) : Tool {
+    override val name = "send_sms"
+    override val description = "باز کردن پیامک آماده برای بازبینی و ارسال توسط کاربر"
+    override val parameters = listOf(
+        ParamSchema("phone_number", "string", "شماره گیرنده", true),
+        ParamSchema("message", "string", "متن پیامک", true)
+    )
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val number = args.optString("phone_number").trim()
+        val message = args.optString("message").trim()
+        if (number.isBlank() || message.isBlank()) return ToolResult(false, "شماره گیرنده و متن پیامک لازم است.")
+        val intent = Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("smsto:${android.net.Uri.encode(number)}"))
+            .putExtra("sms_body", message)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "پیامک برای $number آماده شد؛ قبل از ارسال آن را بررسی کنید.")
+    }
+}
+
+/** Opens the call log, which acts as the phone assistant's recent-call view. */
+class CallLogTool(private val context: Context) : Tool {
+    override val name = "open_call_log"
+    override val description = "باز کردن گزارش تماس‌ها و دسترسی به تماس‌های اخیر"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("content://call_log/calls"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "گزارش تماس‌های اخیر باز شد.")
+    }
+}
+
+/** Opens the dialer with a common carrier voicemail access code when supported. */
+class VoicemailTool(private val context: Context) : Tool {
+    override val name = "open_voicemail"
+    override val description = "باز کردن صندوق پیام صوتی اپراتور برای گوش دادن توسط کاربر"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val intent = Intent(Intent.ACTION_DIAL, android.net.Uri.parse("tel:*86"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "شماره‌گیر صندوق صوتی باز شد؛ کد اپراتور را بررسی و در صورت نیاز تماس بگیرید.")
+    }
+}
+
+/** Opens a prefilled email composer; the user must review and send it. */
+class EmailComposeTool(private val context: Context) : Tool {
+    override val name = "send_email"
+    override val description = "باز کردن ایمیل آماده برای بازبینی و ارسال توسط کاربر"
+    override val parameters = listOf(
+        ParamSchema("to", "string", "آدرس ایمیل گیرنده", true),
+        ParamSchema("subject", "string", "موضوع ایمیل", false),
+        ParamSchema("body", "string", "متن ایمیل", true)
+    )
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val to = args.optString("to").trim()
+        val subject = args.optString("subject").trim()
+        val body = args.optString("body").trim()
+        if (to.isBlank() || body.isBlank()) return ToolResult(false, "گیرنده و متن ایمیل لازم است.")
+        val uri = android.net.Uri.Builder()
+            .scheme("mailto")
+            .path(to)
+            .appendQueryParameter("subject", subject)
+            .appendQueryParameter("body", body)
+            .build()
+        val intent = Intent(Intent.ACTION_SENDTO, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "ایمیل برای $to آماده شد؛ قبل از ارسال آن را بررسی کنید.")
+    }
+}
+
+private fun launchExternal(context: Context, intent: Intent, successMessage: String): ToolResult {
+    if (intent.resolveActivity(context.packageManager) == null) {
+        return ToolResult(false, "برنامه‌ای برای انجام این کار در دستگاه پیدا نشد.")
+    }
+    context.startActivity(intent)
+    return ToolResult(true, successMessage)
 }

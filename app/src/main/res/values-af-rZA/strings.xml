@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">Ongeldige aktiwiteit skakel verskaf</string>
     <string name="warning_root_check">Waarskuwing: Toestemming tot oorsprong is moontlik onbeskikbaar oo hierdie gestel </string>
     <string name="exception_invalid_component_name">Ongeldig of moontlik skadelike komponent naam: %s</string>
-    <string name="exception_command_error">Bevel kom terug met n kode fout %d, uitset: %s</string>
+    <string name="exception_command_error">Bevel kom terug met n kode fout %1$d, uitset: %2$s</string>
     <string name="category_title_about">Met betrekking tot</string>
     <string name="action_view_source">Bekyk Sourcecode</string>
     <string name="summary_action_view_source">Die bronkode van hierdie App is beskikbaar vir lees en wysiging op GitHub. Stuur gerus vir ons pull-versoeke met verbeterings en foutoplossings.</string>

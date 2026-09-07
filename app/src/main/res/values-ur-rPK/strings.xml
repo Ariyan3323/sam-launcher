@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">غلط سرگرمی لنک دیا گیا</string>
     <string name="warning_root_check">انتباہ: اس ڈیوائس پر روٹ مراعات ممکنہ طور پر دستیاب نہیں ہیں۔</string>
     <string name="exception_invalid_component_name">غلط یا ممکنہ طور پر نقصان دہ جزو کا نام: %s</string>
-    <string name="exception_command_error">کمانڈ نے خرابی کا کوڈ واپس کیا: %d, آؤٹ پٹ: %s</string>
+    <string name="exception_command_error">کمانڈ نے خرابی کا کوڈ واپس کیا: %1$d, آؤٹ پٹ: %2$s</string>
     <string name="category_title_about">کے بارے میں</string>
     <string name="action_view_source">سورس کوڈ دیکھیں</string>
     <string name="summary_action_view_source">اس ایپ کا سورس کوڈ GitHub پر پڑھنے اور ترمیم کرنے کے لیے دستیاب ہے۔ بہتری اور بگ فکسز کے لیے ہمیں پل ریکوئسٹس بھیجنے میں ہچکچائیں نہیں۔</string>

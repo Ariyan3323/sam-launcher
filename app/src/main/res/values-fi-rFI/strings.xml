@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">Virheellinen toimintolinkki</string>
     <string name="warning_root_check">Varoitus: Pääkäyttäjän oikeudet eivät todennäköisesti ole käytettävissä tässä laitteessa.</string>
     <string name="exception_invalid_component_name">Virheellinen tai mahdollisesti haitallinen komponentin nimi: %s</string>
-    <string name="exception_command_error">Komento palautti virhekoodin: %d, tulos: %s</string>
+    <string name="exception_command_error">Komento palautti virhekoodin: %1$d, tulos: %2$s</string>
     <string name="category_title_about">Tietoja</string>
     <string name="action_view_source">Näytä lähdekoodi</string>
     <string name="summary_action_view_source">Tämän sovelluksen lähdekoodi on luettavissa ja muokattavissa GitHubissa. Voit vapaasti lähettää meille parannuksia ja virheenkorjauksia.</string>

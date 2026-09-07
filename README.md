@@ -26,6 +26,19 @@ Sam Launcher is an Android application based on Activity Launcher. It discovers 
 - Add the Sam assistant widget to the Android home screen.
 - Switch between three assistant bubble appearance palettes.
 
+### Communication assistant
+
+Sam can help prepare communication actions through the device's default applications:
+
+- Open the phone dialer with a requested number.
+- Open the default messaging application's inbox.
+- Open a prefilled SMS composer with a recipient and message.
+- Open the recent call log.
+- Open the carrier voicemail access number in the dialer when supported by the device or carrier.
+- Open a prefilled email composer with recipient, subject, and body.
+
+These actions intentionally hand control to the user. Sam does not silently place calls, read SMS content directly, or send SMS and email messages without the user's review and confirmation in the default application.
+
 ### Multi-step workflows
 
 Sam can execute a bounded sequence of commands in order, stopping when a step fails. Up to six steps are supported. Persian and English separators include:
@@ -78,8 +91,9 @@ A complete JDK with `javac` is required. JDK 17 is the recommended environment f
 4. Confirm that the analogue clock advances without sending a command.
 5. Try a multi-step command such as `باز کن Chrome، سپس جستجو آب و هوا، بعدش باتری`.
 6. Verify that a failed step stops the remaining workflow and reports the failing step.
-7. Add the Sam widget and confirm that tapping it opens the assistant.
-8. Confirm that the normal Sam Launcher application remains the launcher entry point; the assistant screen is not registered as a system HOME replacement.
+7. Test the communication commands and verify that they open the appropriate default application for review.
+8. Add the Sam widget and confirm that tapping it opens the assistant.
+9. Confirm that the normal Sam Launcher application remains the launcher entry point; the assistant screen is not registered as a system HOME replacement.
 
 The repository also contains unit coverage for workflow parsing. A full device test pass is still recommended for speech recognition, Text-to-Speech, widgets, browser launches, and Android Settings intents.
 

@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">செல்லாத செயல்பாடு இணைப்பு வழங்கப்பட்டது</string>
     <string name="warning_root_check">எச்சரிக்கை: ரூட் சலுகைகள் இந்தச் சாதனத்தில் கிடைக்காமல் போகலாம்.</string>
     <string name="exception_invalid_component_name">தவறான அல்லது தீங்கு விளைவிக்கும் கூறுகள் பெயர்: %s</string>
-    <string name="exception_command_error">கட்டளை பிழை குறியீட்டைத் திருப்பியது: %d, வெளியீடு: %s</string>
+    <string name="exception_command_error">கட்டளை பிழை குறியீட்டைத் திருப்பியது: %1$d, வெளியீடு: %2$s</string>
     <string name="category_title_about">பற்றி</string>
     <string name="action_view_source">மூலக் குறியீட்டைக் காண்க</string>
     <string name="summary_action_view_source">இந்த பயன்பாட்டின் மூலக் குறியீடு GitHub இல் படிக்கவும் மாற்றவும் கிடைக்கிறது. மேம்பாடுகள் மற்றும் பிழைத் திருத்தங்களுடன் புல் கோரிக்கைகளை எங்களுக்கு அனுப்ப தயங்காதீர்கள்.</string>

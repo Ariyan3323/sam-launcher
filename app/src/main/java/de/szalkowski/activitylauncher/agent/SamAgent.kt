@@ -150,7 +150,8 @@ data class AgentOutput(
     val reply: String,
     val executedTools: List<String> = emptyList(),
     val responseTimeMs: Long = 0,
-    val success: Boolean
+    val success: Boolean,
+    val workflowSteps: List<String> = emptyList()
 )
 
 // ═══════════════════════════════════════════════════════════════
@@ -281,6 +282,51 @@ class SamAgent(
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {
+        val steps = splitWorkflow(userInput)
+        return if (steps.size > 1) processWorkflow(steps, deviceContext) else processSingleCommand(userInput, deviceContext)
+    }
+
+    private suspend fun processWorkflow(steps: List<String>, deviceContext: String): AgentOutput {
+        val startTime = System.currentTimeMillis()
+        val executedTools = mutableListOf<String>()
+        val stepReports = mutableListOf<String>()
+        var allSuccessful = true
+
+        for ((index, step) in steps.withIndex()) {
+            val output = processSingleCommand(step, deviceContext)
+            executedTools += output.executedTools
+            val report = if (output.success) {
+                "${index + 1}. $step → ${output.reply}"
+            } else {
+                "${index + 1}. $step → خطا: ${output.reply}"
+            }
+            stepReports += report
+            if (!output.success) {
+                allSuccessful = false
+                break
+            }
+        }
+
+        val summary = if (allSuccessful) "همهٔ ${stepReports.size} مرحله با موفقیت انجام شد."
+        else "زنجیره در مرحلهٔ ${stepReports.size} متوقف شد."
+        return AgentOutput(
+            reply = "$summary\n${stepReports.joinToString("\n")}",
+            executedTools = executedTools.distinct(),
+            responseTimeMs = System.currentTimeMillis() - startTime,
+            success = allSuccessful,
+            workflowSteps = stepReports
+        )
+    }
+
+    private fun splitWorkflow(input: String): List<String> {
+        return input.trim()
+            .split(Regex("\\s*(?:،|؛|;|\\n|\\s+سپس\\s+|\\s+بعدش\\s+|\\s+و\\s+بعد\\s+|\\s+then\\s+|\\s+after that\\s+)\\s*", RegexOption.IGNORE_CASE))
+            .map { it.trim() }
+            .filter { it.length >= 2 }
+            .take(6)
+    }
+
+    private suspend fun processSingleCommand(userInput: String, deviceContext: String): AgentOutput {
         val startTime = System.currentTimeMillis()
 
         try {
@@ -307,6 +353,14 @@ class SamAgent(
 
                 if (toolResult != null) {
                     executedTools.add(toolCall.name)
+                    if (!toolResult.success) {
+                        return AgentOutput(
+                            reply = toolResult.message,
+                            executedTools = executedTools.distinct(),
+                            responseTimeMs = System.currentTimeMillis() - startTime,
+                            success = false
+                        )
+                    }
                     currentInput = "[نتیجه اجرای ابزار ${toolCall.name}]: ${toolResult.message}"
                 } else {
                     finalText = "ابزار ${toolCall.name} پیدا نشد."

@@ -72,6 +72,11 @@ class PackageListFragment : Fragment() {
         }
         binding.agentBatteryButton.setOnClickListener { openAssistant("باتری را بررسی کن") }
         binding.agentSettingsButton.setOnClickListener { openAssistant("تنظیمات را باز کن") }
+        binding.appListButton.setOnClickListener {
+            packageListAdapter.filter = ""
+            actionBar?.actionBarSearchText = ""
+            binding.rvPackages.smoothScrollToPosition(0)
+        }
         pulseAnimator = ObjectAnimator.ofFloat(binding.agentPulse, View.ALPHA, 0.45f, 1f).apply {
             duration = 1100L
             repeatMode = ObjectAnimator.REVERSE

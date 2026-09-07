@@ -257,6 +257,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("work mode") || command.contains("حالت کار") -> activateSmartMode("کار")
             command.contains("driving mode") || command.contains("حالت رانندگی") -> activateSmartMode("رانندگی")
             command.contains("sleep mode") || command.contains("حالت خواب") -> activateSmartMode("خواب")
+            command.contains("تماس بگیر") || command.contains("call ") -> prepareCall(rawCommand)
+            command.contains("پیامک") || command.contains("sms") -> prepareSms(rawCommand)
+            command.contains("ایمیل") || command.contains("email") -> prepareEmail(rawCommand)
             command.startsWith("remember ") -> rememberFact(rawCommand.removePrefixIgnoreCase("remember ").trim())
             command.startsWith("به خاطر بسپار ") -> rememberFact(rawCommand.removePrefix("به خاطر بسپار ").trim())
             command.contains("show memory") || command.contains("حافظه من") || command.contains("چه چیزهایی را به خاطر داری") -> showMemory()
@@ -303,6 +306,48 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val launchIntent = match?.let { packageManager.getLaunchIntentForPackage(it.packageName) }
         if (launchIntent == null) respond(getString(R.string.assistant_app_not_found, query))
         else { startActivity(launchIntent); respond(getString(R.string.assistant_opening, match.loadLabel(packageManager))) }
+    }
+
+    private fun prepareCall(rawCommand: String) {
+        val number = Regex("[+]?[-\\d() ]{7,}").find(rawCommand)?.value?.trim()
+        if (number == null) {
+            respond("شماره تماس را هم بگو؛ مثلاً «با 09121234567 تماس بگیر».")
+            return
+        }
+        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(number)}"))
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+            respond("شماره‌گیر برای $number باز شد؛ تماس نهایی با تأیید تو انجام می‌شود.")
+        } else respond("شماره‌گیر روی این گوشی پیدا نشد.")
+    }
+
+    private fun prepareSms(rawCommand: String) {
+        val number = Regex("[+]?[-\\d() ]{7,}").find(rawCommand)?.value?.trim()
+        if (number == null) {
+            val inbox = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING)
+            if (inbox.resolveActivity(packageManager) != null) startActivity(inbox)
+            respond("صندوق پیامک باز شد؛ برای ارسال، شماره و متن را بگو.")
+            return
+        }
+        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(number)}"))
+            .putExtra("sms_body", rawCommand.replace(number, "").replace("پیامک", "").trim())
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+            respond("پیامک آماده شد؛ قبل از ارسال آن را بررسی کن.")
+        } else respond("برنامه پیامک پیدا نشد.")
+    }
+
+    private fun prepareEmail(rawCommand: String) {
+        val email = Regex("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}").find(rawCommand)?.value
+        if (email == null) {
+            respond("آدرس ایمیل را هم بگو؛ مثلاً «ایمیل به test@example.com».")
+            return
+        }
+        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${Uri.encode(email)}"))
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+            respond("ایمیل برای $email آماده شد؛ ارسال نهایی با تأیید توست.")
+        } else respond("برنامه ایمیل پیدا نشد.")
     }
 
     private fun searchWeb(query: String) {

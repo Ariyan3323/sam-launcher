@@ -85,21 +85,28 @@ class AssistantBubbleView(context: Context, attrs: AttributeSet? = null) : View(
 
         paint.color = Color.WHITE
         val eyeY = centerY - size * .07f
-        val eyeRadius = size * (.055f + phase * .012f)
-        canvas.drawCircle(centerX - size * .14f, eyeY, eyeRadius, paint)
-        canvas.drawCircle(centerX + size * .14f, eyeY, eyeRadius, paint)
+        val blink = if (state == State.SPEAKING || state == State.LISTENING) {
+            kotlin.math.abs(kotlin.math.sin(phase * Math.PI * 2.0)).toFloat()
+        } else 0f
+        val eyeRadius = size * .055f
+        val eyeHeight = if (blink > .94f) size * .012f else eyeRadius
+        canvas.drawOval(centerX - size * .14f - eyeRadius, eyeY - eyeHeight, centerX - size * .14f + eyeRadius, eyeY + eyeHeight, paint)
+        canvas.drawOval(centerX + size * .14f - eyeRadius, eyeY - eyeHeight, centerX + size * .14f + eyeRadius, eyeY + eyeHeight, paint)
         paint.color = Color.rgb(35, 35, 70)
-        canvas.drawCircle(centerX - size * .14f, eyeY, eyeRadius * .35f, paint)
-        canvas.drawCircle(centerX + size * .14f, eyeY, eyeRadius * .35f, paint)
+        if (eyeHeight > eyeRadius * .5f) {
+            canvas.drawCircle(centerX - size * .14f, eyeY, eyeRadius * .35f, paint)
+            canvas.drawCircle(centerX + size * .14f, eyeY, eyeRadius * .35f, paint)
+        }
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = size * .045f
         paint.strokeCap = Paint.Cap.ROUND
-        canvas.drawArc(
-            centerX - size * .16f, centerY - size * .01f,
-            centerX + size * .16f, centerY + size * .25f,
-            25f, 130f, false, paint
-        )
+        if (state == State.SPEAKING) {
+            val mouth = size * (.10f + phase * .055f)
+            canvas.drawOval(centerX - mouth, centerY + size * .035f, centerX + mouth, centerY + size * .035f + size * .055f, paint)
+        } else {
+            canvas.drawArc(centerX - size * .16f, centerY - size * .01f, centerX + size * .16f, centerY + size * .25f, 25f, 130f, false, paint)
+        }
         paint.style = Paint.Style.FILL
     }
 }

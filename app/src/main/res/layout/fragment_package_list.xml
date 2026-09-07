@@ -137,6 +137,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/launcher_agent_settings" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/appListButton"
+                    app:backgroundTint="?attr/colorPrimaryContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/launcher_app_list" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

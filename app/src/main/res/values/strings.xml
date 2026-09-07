@@ -29,6 +29,14 @@
     <string name="assistant_agent_offline">Super agent: local fallback (API key not configured)</string>
     <string name="assistant_agent_error">Super agent: request failed; local mode available</string>
     <string name="assistant_agent_tools">Tools used: %1$s</string>
+    <string name="launcher_agent_title">Sam AI</string>
+    <string name="launcher_agent_ready">Ready</string>
+    <string name="launcher_agent_hint">Ask Sam anything…</string>
+    <string name="launcher_agent_ask">Ask</string>
+    <string name="launcher_agent_battery">Battery</string>
+    <string name="launcher_agent_settings">Settings</string>
+    <string name="launcher_agent_online">Gemini online</string>
+    <string name="launcher_agent_local">Local mode</string>
     <string name="app_name">Sam Launcher</string>
     <string name="short_description">Launches hidden activities and creates shortcuts for installed apps</string>
     <string name="title_fragment_package_list">Installed packages</string>

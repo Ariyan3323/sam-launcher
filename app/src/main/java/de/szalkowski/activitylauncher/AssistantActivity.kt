@@ -28,6 +28,10 @@ import java.util.Locale
 
 /** Local assistant with optional Gemini agent mode, voice transcription, and safe Android actions. */
 class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+    companion object {
+        const val EXTRA_INITIAL_COMMAND = "de.szalkowski.activitylauncher.extra.INITIAL_COMMAND"
+    }
+
     private lateinit var binding: ActivityAssistantBinding
     private var batteryLevel = -1
     private lateinit var textToSpeech: TextToSpeech
@@ -71,6 +75,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding.appearanceButton.setOnClickListener {
             binding.bubble.nextAppearance()
             respond(getString(R.string.assistant_appearance_changed))
+        }
+        intent.getStringExtra(EXTRA_INITIAL_COMMAND)?.takeIf { it.isNotBlank() }?.let { command ->
+            binding.root.post { runCommand(command) }
         }
     }
 

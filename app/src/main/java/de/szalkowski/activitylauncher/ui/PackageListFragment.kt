@@ -1,5 +1,6 @@
 package de.szalkowski.activitylauncher.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -9,6 +10,8 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
+import de.szalkowski.activitylauncher.AssistantActivity
+import de.szalkowski.activitylauncher.BuildConfig
 import de.szalkowski.activitylauncher.R
 import de.szalkowski.activitylauncher.databinding.FragmentPackageListBinding
 import de.szalkowski.activitylauncher.services.ViewIntentParserService
@@ -54,6 +57,16 @@ class PackageListFragment : Fragment() {
         binding.rvPackages.adapter = packageListAdapter
         binding.rvPackages.isNestedScrollingEnabled = false
 
+        binding.agentStatus.setText(
+            if (BuildConfig.GEMINI_API_KEY.isNotBlank()) R.string.launcher_agent_online
+            else R.string.launcher_agent_local
+        )
+        binding.agentAskButton.setOnClickListener {
+            openAssistant(binding.agentCommandInput.text?.toString().orEmpty())
+        }
+        binding.agentBatteryButton.setOnClickListener { openAssistant("باتری را بررسی کن") }
+        binding.agentSettingsButton.setOnClickListener { openAssistant("تنظیمات را باز کن") }
+
         runCatching {
             val intent = activity?.intent ?: return
             val packageName = viewIntentParserService.packageFromIntent(intent) ?: return
@@ -68,6 +81,12 @@ class PackageListFragment : Fragment() {
                 .show()
         }
 
+    }
+
+    private fun openAssistant(command: String) {
+        val intent = Intent(requireContext(), AssistantActivity::class.java)
+        if (command.isNotBlank()) intent.putExtra(AssistantActivity.EXTRA_INITIAL_COMMAND, command.trim())
+        startActivity(intent)
     }
 
     override fun onDestroyView() {

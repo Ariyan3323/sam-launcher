@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import de.szalkowski.activitylauncher.agent.AgentConfig
 import de.szalkowski.activitylauncher.agent.PersonalMemory
 import de.szalkowski.activitylauncher.agent.SamAgent
+import de.szalkowski.activitylauncher.agent.SemanticAppSearch
 import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -244,9 +245,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun openApp(query: String) {
         val normalized = query.trim().lowercase(Locale.ROOT)
         if (normalized.isBlank()) { respond(getString(R.string.assistant_help)); return }
-        val match = packageManager.getInstalledApplications(PackageManager.MATCH_ALL).firstOrNull {
+        val directMatch = packageManager.getInstalledApplications(PackageManager.MATCH_ALL).firstOrNull {
             it.loadLabel(packageManager).toString().lowercase(Locale.ROOT).contains(normalized)
         }
+        val match = directMatch ?: SemanticAppSearch.findMatches(this, normalized, 1).firstOrNull()
         val launchIntent = match?.let { packageManager.getLaunchIntentForPackage(it.packageName) }
         if (launchIntent == null) respond(getString(R.string.assistant_app_not_found, query))
         else { startActivity(launchIntent); respond(getString(R.string.assistant_opening, match.loadLabel(packageManager))) }

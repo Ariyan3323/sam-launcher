@@ -67,6 +67,10 @@ These first-phase controls are intentionally local and lightweight. They do not 
 
 Sam supports an explicitly user-controlled on-device memory. Use `به خاطر بسپار ...` or `remember ...` to save a fact, `حافظه من` or `show memory` to review saved facts, and `حافظه را پاک کن` or `clear memory` to delete them. The store is capped at 30 facts, persists locally, and is not sent to Gemini or any other network service by the memory feature.
 
+### Semantic app discovery
+
+Sam can resolve common intents instead of requiring an exact app name, such as `برنامه ویرایش عکس را باز کن`, `برنامه پرداخت قبض را پیدا کن`, `open my music app`, or `find the map app`. Matching is deterministic and local, using installed app labels and package names plus a small multilingual alias table.
+
 ### Optional Gemini agent mode
 
 When `GEMINI_API_KEY` is configured at build time, the assistant can use the optional Gemini-powered agent mode. This mode includes local tool registration, bounded tool iterations, short conversation memory, device context, and the same safe Android actions exposed by the assistant. Without a configured key, Sam falls back to the local command experience.

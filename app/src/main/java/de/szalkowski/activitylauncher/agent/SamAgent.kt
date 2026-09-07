@@ -290,6 +290,7 @@ class SamAgent(
         toolRegistry.register(RememberFactTool(context))
         toolRegistry.register(ShowMemoryTool(context))
         toolRegistry.register(ClearMemoryTool(context))
+        toolRegistry.register(SemanticAppSearchTool(context))
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {
@@ -409,9 +410,10 @@ class OpenAppTool(private val context: Context) : Tool {
         val appName = args.getString("app_name").lowercase(Locale.getDefault())
         val pm = context.packageManager
         val apps = pm.getInstalledApplications(PackageManager.MATCH_ALL)
-        val match = apps.firstOrNull {
+        val directMatch = apps.firstOrNull {
             it.loadLabel(pm).toString().lowercase(Locale.getDefault()).contains(appName)
         }
+        val match = directMatch ?: SemanticAppSearch.findMatches(context, appName, 1).firstOrNull()
         val intent = match?.let { pm.getLaunchIntentForPackage(it.packageName) }
         return if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -704,6 +706,19 @@ class ClearMemoryTool(private val context: Context) : Tool {
     override suspend fun execute(args: JSONObject): ToolResult {
         PersonalMemory(context).clear()
         return ToolResult(true, "حافظه شخصی کاملاً پاک شد.")
+    }
+}
+
+class SemanticAppSearchTool(private val context: Context) : Tool {
+    override val name = "find_apps_semantically"
+    override val description = "پیدا کردن برنامه‌ها با مفهوم محاوره‌ای مثل برنامه عکس، قبض، موسیقی یا نقشه"
+    override val parameters = listOf(ParamSchema("intent", "string", "کاری که برنامه باید انجام دهد", true))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val intent = args.optString("intent").trim()
+        val matches = SemanticAppSearch.findMatches(context, intent)
+        return if (matches.isEmpty()) ToolResult(false, "برنامه‌ای برای «$intent» پیدا نشد.")
+        else ToolResult(true, "برنامه‌های پیشنهادی برای «$intent»: ${matches.map { it.loadLabel(context.packageManager) }.joinToString("، ")}")
     }
 }
 

@@ -54,6 +54,15 @@ For example:
 
 Each step is reported in the final response, and unknown tools or failed tool calls are surfaced as errors instead of being silently ignored.
 
+### Quick command and smart modes
+
+- Open Sam quickly from the main launcher menu.
+- Activate local smart modes for `کار` (work), `رانندگی` (driving), or `خواب` (sleep).
+- Persist the active mode locally on the device.
+- Ask for a daily dashboard containing the current time, battery level, and active mode.
+
+These first-phase controls are intentionally local and lightweight. They do not change system settings or silence notifications without an explicit implementation and user permission.
+
 ### Optional Gemini agent mode
 
 When `GEMINI_API_KEY` is configured at build time, the assistant can use the optional Gemini-powered agent mode. This mode includes local tool registration, bounded tool iterations, short conversation memory, device context, and the same safe Android actions exposed by the assistant. Without a configured key, Sam falls back to the local command experience.

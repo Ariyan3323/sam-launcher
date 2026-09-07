@@ -32,7 +32,8 @@ class IconPickerDialogFragment : DialogFragment(), AsyncProvider.Listener<IconLi
         super.onAttach(activity)
 
         val provider = iconListAsyncProviderFactory.create(this)
-        provider.execute()
+        @Suppress("DEPRECATION")
+        val ignored = provider.execute()
     }
 
     fun attachIconPickerListener(listener: IconPickerListener) {

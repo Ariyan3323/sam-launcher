@@ -125,7 +125,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = textToSpeech.setLanguage(Locale("fa", "IR"))
+            val result = textToSpeech.setLanguage(Locale.forLanguageTag("fa-IR"))
             textToSpeech.setSpeechRate(0.95f)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 textToSpeech.language = Locale.getDefault()
@@ -221,6 +221,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("battery") || command.contains("باتری") -> respond(getString(R.string.assistant_battery_status, batteryLevel))
             command.contains("device status") || command.contains("وضعیت") || command.contains("خلاصه") -> respond(localDeviceSummary())
             command.contains("time") || command.contains("ساعت") -> respond(currentTime())
+            command.contains("dashboard") || command.contains("داشبورد") || command.contains("خلاصه امروز") -> respond(dailyDashboard())
+            command.contains("work mode") || command.contains("حالت کار") -> activateSmartMode("کار")
+            command.contains("driving mode") || command.contains("حالت رانندگی") -> activateSmartMode("رانندگی")
+            command.contains("sleep mode") || command.contains("حالت خواب") -> activateSmartMode("خواب")
             command.contains("clock code") || command.contains("کد ساعت") -> exportClockCode()
             command.contains("clear cache") || (command.contains("پاک") && command.contains("کش")) -> openStorageSettings()
             command.contains("settings") || command.contains("تنظیمات") -> openSettings()
@@ -272,6 +276,22 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val now = Calendar.getInstance()
         binding.analogClock.setTime(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), now.get(Calendar.SECOND))
         return getString(R.string.assistant_time, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), now.get(Calendar.SECOND))
+    }
+
+    private fun activateSmartMode(mode: String) {
+        getSharedPreferences("sam_preferences", MODE_PRIVATE).edit()
+            .putString("active_mode", mode)
+            .putLong("active_mode_at", System.currentTimeMillis())
+            .apply()
+        respond("حالت $mode فعال شد. سام تنظیمات پیشنهادی این حالت را در نظر می‌گیرد.")
+    }
+
+    private fun dailyDashboard(): String {
+        val mode = getSharedPreferences("sam_preferences", MODE_PRIVATE)
+            .getString("active_mode", "عادی") ?: "عادی"
+        val now = Calendar.getInstance()
+        val minute = String.format(Locale.getDefault(), "%02d", now.get(Calendar.MINUTE))
+        return "داشبورد امروز: ساعت ${now.get(Calendar.HOUR_OF_DAY)}:$minute؛ باتری $batteryLevel٪؛ حالت فعال: $mode."
     }
 
     private fun exportClockCode() {

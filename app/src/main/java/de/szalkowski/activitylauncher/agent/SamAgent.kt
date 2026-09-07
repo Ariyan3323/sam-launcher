@@ -285,6 +285,8 @@ class SamAgent(
         toolRegistry.register(CallLogTool(context))
         toolRegistry.register(VoicemailTool(context))
         toolRegistry.register(EmailComposeTool(context))
+        toolRegistry.register(ActivateModeTool(context))
+        toolRegistry.register(DailyDashboardTool(context))
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {
@@ -627,6 +629,43 @@ class EmailComposeTool(private val context: Context) : Tool {
             .build()
         val intent = Intent(Intent.ACTION_SENDTO, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return launchExternal(context, intent, "ایمیل برای $to آماده شد؛ قبل از ارسال آن را بررسی کنید.")
+    }
+}
+
+class ActivateModeTool(private val context: Context) : Tool {
+    override val name = "activate_smart_mode"
+    override val description = "فعال کردن حالت هوشمند کار، رانندگی یا خواب و ذخیره آن روی دستگاه"
+    override val parameters = listOf(ParamSchema("mode", "string", "کار، رانندگی یا خواب", true))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val requested = args.optString("mode").trim().lowercase(Locale.ROOT)
+        val mode = when {
+            requested.contains("work") || requested.contains("کار") -> "کار"
+            requested.contains("driv") || requested.contains("رانندگی") -> "رانندگی"
+            requested.contains("sleep") || requested.contains("خواب") -> "خواب"
+            else -> return ToolResult(false, "حالت معتبر نیست؛ یکی از کار، رانندگی یا خواب را انتخاب کنید.")
+        }
+        context.getSharedPreferences("sam_preferences", Context.MODE_PRIVATE).edit()
+            .putString("active_mode", mode)
+            .putLong("active_mode_at", System.currentTimeMillis())
+            .apply()
+        return ToolResult(true, "حالت $mode فعال شد.")
+    }
+}
+
+class DailyDashboardTool(private val context: Context) : Tool {
+    override val name = "daily_dashboard"
+    override val description = "نمایش داشبورد کوتاه روزانه شامل ساعت، باتری و حالت فعال"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val mode = context.getSharedPreferences("sam_preferences", Context.MODE_PRIVATE)
+            .getString("active_mode", "عادی") ?: "عادی"
+        val battery = (context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager)
+            .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val now = Calendar.getInstance()
+        val time = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
+        return ToolResult(true, "داشبورد امروز: ساعت $time؛ باتری $battery٪؛ حالت فعال: $mode.")
     }
 }
 

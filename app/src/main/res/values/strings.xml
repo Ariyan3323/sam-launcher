@@ -48,6 +48,7 @@
     <string name="launcher_agent_online">Gemini online</string>
     <string name="launcher_agent_local">Local mode</string>
     <string name="app_name">Sam Launcher</string>
+    <string name="sam_quick_command">Sam</string>
     <string name="short_description">Launches hidden activities and creates shortcuts for installed apps</string>
     <string name="title_fragment_package_list">Installed packages</string>
     <string name="title_fragment_activity_list">Activities</string>

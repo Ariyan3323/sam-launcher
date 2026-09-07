@@ -89,6 +89,11 @@ class MainActivity : AppCompatActivity(), ActionBarSearch {
                 return true
             }
 
+            R.id.action_sam -> {
+                startActivity(Intent(this, AssistantActivity::class.java))
+                return true
+            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

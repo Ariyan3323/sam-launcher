@@ -291,6 +291,7 @@ class SamAgent(
         toolRegistry.register(ShowMemoryTool(context))
         toolRegistry.register(ClearMemoryTool(context))
         toolRegistry.register(SemanticAppSearchTool(context))
+        toolRegistry.register(PrivacyModeTool(context))
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {
@@ -408,6 +409,8 @@ class OpenAppTool(private val context: Context) : Tool {
 
     override suspend fun execute(args: JSONObject): ToolResult {
         val appName = args.getString("app_name").lowercase(Locale.getDefault())
+        val privacyGuard = PrivacyGuard(context)
+        if (!privacyGuard.canOpenApp(appName)) return ToolResult(false, "حالت مهمان اجازه باز کردن این برنامه را نمی‌دهد.")
         val pm = context.packageManager
         val apps = pm.getInstalledApplications(PackageManager.MATCH_ALL)
         val directMatch = apps.firstOrNull {
@@ -681,6 +684,7 @@ class RememberFactTool(private val context: Context) : Tool {
 
     override suspend fun execute(args: JSONObject): ToolResult {
         val fact = args.optString("fact").trim()
+        if (!PrivacyGuard(context).canPersistPersonalMemory()) return ToolResult(false, "در حالت حریم خصوصی یا مهمان، حافظه شخصی غیرفعال است.")
         if (!PersonalMemory(context).remember(fact)) return ToolResult(false, "متنی برای ذخیره‌کردن دریافت نشد.")
         return ToolResult(true, "به خاطر سپردم؛ این اطلاعات فقط روی دستگاه ذخیره شد.")
     }
@@ -719,6 +723,30 @@ class SemanticAppSearchTool(private val context: Context) : Tool {
         val matches = SemanticAppSearch.findMatches(context, intent)
         return if (matches.isEmpty()) ToolResult(false, "برنامه‌ای برای «$intent» پیدا نشد.")
         else ToolResult(true, "برنامه‌های پیشنهادی برای «$intent»: ${matches.map { it.loadLabel(context.packageManager) }.joinToString("، ")}")
+    }
+}
+
+class PrivacyModeTool(private val context: Context) : Tool {
+    override val name = "set_privacy_mode"
+    override val description = "فعال یا خاموش کردن حالت حریم خصوصی یا مهمان روی دستگاه"
+    override val parameters = listOf(
+        ParamSchema("mode", "string", "privacy، guest یا normal", true),
+        ParamSchema("enabled", "boolean", "فعال یا خاموش", true)
+    )
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val guard = PrivacyGuard(context)
+        val enabled = args.optBoolean("enabled", true)
+        when (args.optString("mode").lowercase(Locale.ROOT)) {
+            "privacy", "حریم خصوصی" -> guard.setPrivacyMode(enabled)
+            "guest", "مهمان" -> guard.setGuestMode(enabled)
+            "normal", "عادی" -> {
+                guard.setPrivacyMode(false)
+                guard.setGuestMode(false)
+            }
+            else -> return ToolResult(false, "حالت معتبر نیست؛ privacy، guest یا normal را انتخاب کنید.")
+        }
+        return ToolResult(true, "حالت فعلی سام: ${guard.status()}.")
     }
 }
 

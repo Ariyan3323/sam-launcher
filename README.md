@@ -71,6 +71,10 @@ Sam supports an explicitly user-controlled on-device memory. Use `به خاطر 
 
 Sam can resolve common intents instead of requiring an exact app name, such as `برنامه ویرایش عکس را باز کن`, `برنامه پرداخت قبض را پیدا کن`, `open my music app`, or `find the map app`. Matching is deterministic and local, using installed app labels and package names plus a small multilingual alias table.
 
+### Privacy and Guest Mode
+
+Use `حالت حریم خصوصی` or `privacy mode` to stop personal-memory writes, and `حالت مهمان` or `guest mode` to restrict app launches to a small local allowlist of safe utilities. Both modes are stored locally, can be disabled by voice or text, and do not alter Android permissions or silently hide user data.
+
 ### Optional Gemini agent mode
 
 When `GEMINI_API_KEY` is configured at build time, the assistant can use the optional Gemini-powered agent mode. This mode includes local tool registration, bounded tool iterations, short conversation memory, device context, and the same safe Android actions exposed by the assistant. Without a configured key, Sam falls back to the local command experience.

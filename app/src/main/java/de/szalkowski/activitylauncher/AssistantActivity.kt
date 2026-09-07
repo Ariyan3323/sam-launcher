@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import de.szalkowski.activitylauncher.agent.AgentConfig
 import de.szalkowski.activitylauncher.agent.PersonalMemory
+import de.szalkowski.activitylauncher.agent.PrivacyGuard
 import de.szalkowski.activitylauncher.agent.SamAgent
 import de.szalkowski.activitylauncher.agent.SemanticAppSearch
 import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
@@ -41,6 +42,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var codeWriter: CodeWriter
     private lateinit var agent: SamAgent
     private lateinit var personalMemory: PersonalMemory
+    private lateinit var privacyGuard: PrivacyGuard
 
     private val voiceInput =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -93,6 +95,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         })
         codeWriter = CodeWriter(this)
         personalMemory = PersonalMemory(this)
+        privacyGuard = PrivacyGuard(this)
         agent = SamAgent(this, AgentConfig(name = "سام", geminiApiKey = BuildConfig.GEMINI_API_KEY))
         updateAgentStatus()
         binding.command.setOnEditorActionListener { _, actionId, _ ->
@@ -234,6 +237,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.startsWith("به خاطر بسپار ") -> rememberFact(rawCommand.removePrefix("به خاطر بسپار ").trim())
             command.contains("show memory") || command.contains("حافظه من") || command.contains("چه چیزهایی را به خاطر داری") -> showMemory()
             command.contains("clear memory") || command.contains("پاک کردن حافظه") || command.contains("حافظه را پاک کن") -> clearMemory()
+            command.contains("privacy mode") || command.contains("حالت حریم خصوصی") -> setPrivacyMode(!command.contains("off") && !command.contains("خاموش"))
+            command.contains("guest mode") || command.contains("حالت مهمان") -> setGuestMode(!command.contains("off") && !command.contains("خاموش"))
             command.contains("clock code") || command.contains("کد ساعت") -> exportClockCode()
             command.contains("clear cache") || (command.contains("پاک") && command.contains("کش")) -> openStorageSettings()
             command.contains("settings") || command.contains("تنظیمات") -> openSettings()
@@ -245,6 +250,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun openApp(query: String) {
         val normalized = query.trim().lowercase(Locale.ROOT)
         if (normalized.isBlank()) { respond(getString(R.string.assistant_help)); return }
+        if (!privacyGuard.canOpenApp(normalized)) {
+            respond("حالت مهمان اجازه باز کردن این برنامه را نمی‌دهد.")
+            return
+        }
         val directMatch = packageManager.getInstalledApplications(PackageManager.MATCH_ALL).firstOrNull {
             it.loadLabel(packageManager).toString().lowercase(Locale.ROOT).contains(normalized)
         }
@@ -305,7 +314,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun rememberFact(fact: String) {
-        if (personalMemory.remember(fact)) respond("به خاطر سپردم؛ این اطلاعات فقط روی دستگاه ذخیره شد.")
+        if (!privacyGuard.canPersistPersonalMemory()) {
+            respond("در حالت حریم خصوصی یا مهمان، حافظه شخصی غیرفعال است.")
+        } else if (personalMemory.remember(fact)) respond("به خاطر سپردم؛ این اطلاعات فقط روی دستگاه ذخیره شد.")
         else respond("چیزی برای ذخیره‌کردن پیدا نکردم.")
     }
 
@@ -317,6 +328,16 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun clearMemory() {
         personalMemory.clear()
         respond("حافظه شخصی کاملاً پاک شد.")
+    }
+
+    private fun setPrivacyMode(enabled: Boolean) {
+        privacyGuard.setPrivacyMode(enabled)
+        respond(if (enabled) "حالت حریم خصوصی فعال شد؛ حافظه شخصی متوقف است." else "حالت حریم خصوصی خاموش شد.")
+    }
+
+    private fun setGuestMode(enabled: Boolean) {
+        privacyGuard.setGuestMode(enabled)
+        respond(if (enabled) "حالت مهمان فعال شد؛ فقط برنامه‌های مجاز باز می‌شوند." else "حالت مهمان خاموش شد.")
     }
 
     private fun exportClockCode() {

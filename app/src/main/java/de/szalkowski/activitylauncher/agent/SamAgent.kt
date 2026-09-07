@@ -30,7 +30,7 @@ data class AgentConfig(
         - وضعیت فعلی دستگاه را در نظر بگیر (باتری، ساعت).
     """.trimIndent(),
     val geminiApiKey: String = "YOUR_GEMINI_API_KEY_HERE",
-    val model: String = "gemini-2.5-flash",
+    val model: String = "gemini-3.6-flash",
     val maxMemoryTurns: Int = 10
 )
 

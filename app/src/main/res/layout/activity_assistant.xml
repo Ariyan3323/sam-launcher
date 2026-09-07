@@ -25,6 +25,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/bubble" />
 
+    <TextView
+        android:id="@+id/agentStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:text="@string/assistant_agent_ready"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/batteryStatus" />
+
     <de.szalkowski.activitylauncher.AnalogClockView
         android:id="@+id/analogClock"
         android:layout_width="150dp"
@@ -32,7 +44,7 @@
         android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/batteryStatus" />
+        app:layout_constraintTop_toBottomOf="@id/agentStatus" />
 
     <TextView
         android:id="@+id/response"

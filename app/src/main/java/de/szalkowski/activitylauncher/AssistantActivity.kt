@@ -60,7 +60,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setContentView(binding.root)
         textToSpeech = TextToSpeech(this, this)
         codeWriter = CodeWriter(this)
-        agent = SamAgent(this, AgentConfig(geminiApiKey = BuildConfig.GEMINI_API_KEY))
+        agent = SamAgent(this, AgentConfig(name = "سام", geminiApiKey = BuildConfig.GEMINI_API_KEY))
+        updateAgentStatus()
         binding.command.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND) { submitCommand(); true } else false
         }
@@ -122,20 +123,47 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun runCommand(rawCommand: String) {
         binding.command.setText(rawCommand)
-        if (BuildConfig.GEMINI_API_KEY.isNotBlank() && BuildConfig.GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE") {
+        if (BuildConfig.GEMINI_API_KEY.isConfigured()) {
             runAgentCommand(rawCommand)
         } else {
+            updateAgentStatus()
             runLocalCommand(rawCommand)
         }
     }
 
     private fun runAgentCommand(rawCommand: String) {
+        binding.agentStatus.setText(R.string.assistant_thinking)
         respond(getString(R.string.assistant_thinking))
         lifecycleScope.launch(Dispatchers.IO) {
-            val output = agent.processCommand(rawCommand, deviceContext())
-            withContext(Dispatchers.Main) { respond(output.reply) }
+            runCatching { agent.processCommand(rawCommand, deviceContext()) }
+                .onSuccess { output ->
+                    withContext(Dispatchers.Main) {
+                        updateAgentStatus(output.success)
+                        val tools = output.executedTools.distinct()
+                        val reply = if (tools.isEmpty()) output.reply
+                        else "${output.reply}\n\n${getString(R.string.assistant_agent_tools, tools.joinToString(", "))}"
+                        respond(reply)
+                    }
+                }
+                .onFailure { error ->
+                    withContext(Dispatchers.Main) {
+                        updateAgentStatus(false)
+                        respond(getString(R.string.assistant_agent_error) + "\n" + (error.message ?: "Unknown error"))
+                    }
+                }
         }
     }
+
+    private fun updateAgentStatus(success: Boolean? = null) {
+        val keyConfigured = BuildConfig.GEMINI_API_KEY.isConfigured()
+        binding.agentStatus.text = when {
+            success == false -> getString(R.string.assistant_agent_error)
+            keyConfigured && success != false -> getString(R.string.assistant_agent_online)
+            else -> getString(R.string.assistant_agent_offline)
+        }
+    }
+
+    private fun String.isConfigured(): Boolean = isNotBlank() && this != "YOUR_GEMINI_API_KEY_HERE"
 
     private fun deviceContext(): String {
         val now = Calendar.getInstance()

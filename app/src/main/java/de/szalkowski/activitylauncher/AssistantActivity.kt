@@ -239,8 +239,17 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         when {
             command.startsWith("open ") -> openApp(rawCommand.removePrefixIgnoreCase("open ").trim())
             command.startsWith("باز کن ") -> openApp(rawCommand.removePrefix("باز کن ").trim())
+            command.contains("باز کن") -> {
+                val after = rawCommand.substringAfter("باز کن").trim()
+                val before = rawCommand.substringBefore("باز کن").trim().removeSuffix("را").trim()
+                openApp(if (after.isNotBlank()) after else before)
+            }
             command.startsWith("search ") -> searchWeb(rawCommand.removePrefixIgnoreCase("search ").trim())
             command.startsWith("جستجو ") -> searchWeb(rawCommand.removePrefix("جستجو ").trim())
+            command.startsWith("search for ") -> searchWeb(rawCommand.removePrefixIgnoreCase("search for ").trim())
+            command.contains("در وب جستجو") || command.contains("در اینترنت جستجو") -> searchWeb(
+                rawCommand.substringAfter("جستجو").trim()
+            )
             command.contains("battery") || command.contains("باتری") -> respond(getString(R.string.assistant_battery_status, batteryLevel))
             command.contains("device status") || command.contains("وضعیت") || command.contains("خلاصه") -> respond(localDeviceSummary())
             command.contains("time") || command.contains("ساعت") -> respond(currentTime())
@@ -258,7 +267,25 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("clear cache") || (command.contains("پاک") && command.contains("کش")) -> openStorageSettings()
             command.contains("settings") || command.contains("تنظیمات") -> openSettings()
             command.contains("help") || command.contains("راهنما") -> respond(getString(R.string.assistant_help))
-            else -> searchWeb(rawCommand)
+            else -> respond(localConversation(rawCommand))
+        }
+    }
+
+    private fun localConversation(rawCommand: String): String {
+        val command = rawCommand.trim().lowercase(Locale.ROOT)
+        return when {
+            command.matches(Regex("(سلام|درود|hello|hi|hey).*")) ->
+                "سلام! من سام هستم. بدون اتصال Gemini هم می‌توانم برنامه‌ها را باز کنم، وضعیت گوشی را بگویم و حالت‌های دستگاه را مدیریت کنم."
+            command.contains("اسمت چیه") || command.contains("کی هستی") || command.contains("who are you") ->
+                "من سام، دستیار محلی Sam Launcher هستم؛ برای کارهای روزمره اول خود گوشی را بررسی می‌کنم."
+            command.contains("خوبی") || command.contains("how are you") ->
+                "آماده‌ام کمک کنم. یک فرمان کوتاه مثل «باتری»، «تنظیمات» یا «باز کن دوربین» بگو."
+            command.contains("ممنون") || command.contains("مرسی") || command.contains("thank") ->
+                "خواهش می‌کنم؛ هر وقت خواستی در خدمتم."
+            command.contains("چه کارهایی") || command.contains("قابلیت") || command.contains("what can you do") ->
+                "می‌توانم برنامه‌ها را باز کنم، برنامه مناسب را با مفهوم پیدا کنم، باتری و ساعت را بگویم، تنظیمات و حالت‌های کار/رانندگی/خواب را باز کنم و حافظه محلی داشته باشم."
+            else ->
+                "این فرمان را هنوز دقیق متوجه نشدم. می‌توانی بگویی «باز کن دوربین»، «باتری»، «تنظیمات» یا «در وب جستجو کن ...»؟"
         }
     }
 

@@ -23,18 +23,42 @@ class PackageListServiceImpl @Inject constructor(
 
     private val config: Configuration = settingsService.getLocaleConfiguration()
     private val packageManager: PackageManager = context.packageManager
-    private val installedPackages: List<MyPackageInfo> =
-        packageManager.getInstalledPackages(
-            PackageManager.GET_ACTIVITIES
-                    or PackageManager.MATCH_ALL
-                    or PackageManager.MATCH_DISABLED_COMPONENTS
-                    or PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
-        ).mapNotNull {
-            getPackageInfo(it)
-        }.sortedBy { it.name.lowercase() }
+    private val installedPackages: List<MyPackageInfo> = loadPackages()
 
     override val packages: List<MyPackageInfo>
         get() = installedPackages
+
+    private fun loadPackages(): List<MyPackageInfo> {
+        val detailed = runCatching {
+            packageManager.getInstalledPackages(
+                PackageManager.GET_ACTIVITIES
+                        or PackageManager.MATCH_ALL
+                        or PackageManager.MATCH_DISABLED_COMPONENTS
+                        or PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
+            ).mapNotNull { info -> runCatching { getPackageInfo(info) }.getOrNull() }
+        }.getOrDefault(emptyList())
+        if (detailed.isNotEmpty()) return detailed.sortedBy { it.name.lowercase() }
+
+        // Some Android builds reject activity metadata for one or more packages.
+        // Keep the launcher useful with a safe application-only fallback.
+        return runCatching {
+            packageManager.getInstalledApplications(PackageManager.MATCH_ALL).mapNotNull { app ->
+                runCatching {
+                    val label = app.loadLabel(packageManager).toString()
+                    val version = packageManager.getPackageInfo(app.packageName, 0).versionName ?: ""
+                    MyPackageInfo(
+                        packageName = app.packageName,
+                        name = label,
+                        version = version,
+                        defaultActivityName = ActivityName(label, label, app.packageName),
+                        activityNames = emptyList(),
+                        icon = packageManager.getApplicationIcon(app),
+                        iconResourceName = null
+                    )
+                }.getOrNull()
+            }.sortedBy { it.name.lowercase() }
+        }.getOrDefault(emptyList())
+    }
 
     private fun getPackageInfo(info: PackageInfo): MyPackageInfo? {
         val packageName = info.packageName as String? // do not trust Android implementations

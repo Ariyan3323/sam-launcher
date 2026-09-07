@@ -68,6 +68,21 @@ class AssistantBubbleView(context: Context, attrs: AttributeSet? = null) : View(
         canvas.drawCircle(centerX, centerY, radius, paint)
         paint.shader = null
 
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = size * .018f
+        paint.color = Color.argb(175, 190, 246, 255)
+        canvas.drawCircle(centerX, centerY, radius * .78f, paint)
+        canvas.save()
+        canvas.rotate(-24f + phase * 18f, centerX, centerY)
+        canvas.drawOval(
+            centerX - radius * .86f, centerY - radius * .27f,
+            centerX + radius * .86f, centerY + radius * .27f, paint
+        )
+        canvas.restore()
+        paint.style = Paint.Style.FILL
+        paint.color = Color.WHITE
+        canvas.drawCircle(centerX + radius * .64f, centerY - radius * .18f, size * .035f, paint)
+
         paint.color = Color.WHITE
         val eyeY = centerY - size * .07f
         val eyeRadius = size * (.055f + phase * .012f)

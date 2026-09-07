@@ -273,7 +273,7 @@ class SamAgent(
 
     private fun registerDefaultTools() {
         toolRegistry.register(OpenAppTool(context))
-        toolRegistry.register(SearchWebTool())
+        toolRegistry.register(SearchWebTool(context))
         toolRegistry.register(BatteryTool(context))
         toolRegistry.register(DeviceSummaryTool(context))
         toolRegistry.register(ListAppsTool(context))
@@ -318,13 +318,7 @@ class SamAgent(
         )
     }
 
-    private fun splitWorkflow(input: String): List<String> {
-        return input.trim()
-            .split(Regex("\\s*(?:،|؛|;|\\n|\\s+سپس\\s+|\\s+بعدش\\s+|\\s+و\\s+بعد\\s+|\\s+then\\s+|\\s+after that\\s+)\\s*", RegexOption.IGNORE_CASE))
-            .map { it.trim() }
-            .filter { it.length >= 2 }
-            .take(6)
-    }
+    private fun splitWorkflow(input: String): List<String> = WorkflowParser.parse(input)
 
     private suspend fun processSingleCommand(userInput: String, deviceContext: String): AgentOutput {
         val startTime = System.currentTimeMillis()
@@ -363,8 +357,12 @@ class SamAgent(
                     }
                     currentInput = "[نتیجه اجرای ابزار ${toolCall.name}]: ${toolResult.message}"
                 } else {
-                    finalText = "ابزار ${toolCall.name} پیدا نشد."
-                    break
+                    return AgentOutput(
+                        reply = "ابزار ${toolCall.name} پیدا نشد.",
+                        executedTools = executedTools.distinct(),
+                        responseTimeMs = System.currentTimeMillis() - startTime,
+                        success = false
+                    )
                 }
 
                 if (iteration == maxToolIterations) {
@@ -414,15 +412,22 @@ class OpenAppTool(private val context: Context) : Tool {
     }
 }
 
-class SearchWebTool : Tool {
+class SearchWebTool(private val context: Context) : Tool {
     override val name = "search_web"
     override val description = "جستجو در گوگل"
     override val parameters = listOf(ParamSchema("query", "string", "عبارت جستجو", true))
 
     override suspend fun execute(args: JSONObject): ToolResult {
         val query = args.getString("query")
-        val url = "https://www.google.com/search?q=${java.net.URLEncoder.encode(query, "UTF-8")}"
-        return ToolResult(true, "جستجو برای: $query", url)
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            android.net.Uri.parse("https://www.google.com/search?q=${android.net.Uri.encode(query)}")
+        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        if (intent.resolveActivity(context.packageManager) == null) {
+            return ToolResult(false, "مرورگری برای انجام این جست‌وجو در دسترس نیست.")
+        }
+        context.startActivity(intent)
+        return ToolResult(true, "جستجو برای: $query")
     }
 }
 

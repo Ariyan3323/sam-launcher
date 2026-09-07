@@ -30,7 +30,7 @@ data class AgentConfig(
         - وضعیت فعلی دستگاه را در نظر بگیر (باتری، ساعت).
     """.trimIndent(),
     val geminiApiKey: String = "YOUR_GEMINI_API_KEY_HERE",
-    val model: String = "gemini-2.0-flash",
+    val model: String = "gemini-2.5-flash",
     val maxMemoryTurns: Int = 10
 )
 
@@ -261,7 +261,20 @@ class LlmClient(private val config: AgentConfig) {
     }
 
     private fun parseResponse(body: String, success: Boolean): AgentResponse {
-        if (!success) return AgentResponse(text = "خطا در ارتباط با سرور: $body", needsToolCall = false)
+        if (!success) {
+            val friendly = runCatching {
+                val error = JSONObject(body).optJSONObject("error")
+                val status = error?.optString("status").orEmpty()
+                val message = error?.optString("message").orEmpty()
+                when {
+                    status == "NOT_FOUND" || message.contains("not found", ignoreCase = true) ->
+                        "مدل هوش مصنوعی در دسترس نیست. حالت محلی سام همچنان فعال است؛ مدل Gemini را به‌روز کن."
+                    message.isNotBlank() -> "ارتباط با Gemini برقرار نشد: ${message.take(180)}"
+                    else -> "ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است."
+                }
+            }.getOrDefault("ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است.")
+            return AgentResponse(text = friendly, needsToolCall = false)
+        }
 
         return try {
             val json = JSONObject(body)

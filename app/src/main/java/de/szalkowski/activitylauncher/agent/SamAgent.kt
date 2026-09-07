@@ -67,6 +67,10 @@ class ToolRegistry {
         tools[tool.name] = tool
     }
 
+    fun registerSkill(skill: AgentSkill) {
+        skill.tools().forEach(::register)
+    }
+
     fun getTool(name: String): Tool? = tools[name]
 
     fun toGeminiSchema(): JSONArray {
@@ -98,6 +102,41 @@ class ToolRegistry {
     suspend fun executeTool(name: String, args: JSONObject): ToolResult? {
         return tools[name]?.execute(args)
     }
+}
+
+interface AgentSkill {
+    val id: String
+    val description: String
+    fun tools(): List<Tool>
+}
+
+class CoreSkill(private val context: Context) : AgentSkill {
+    override val id = "core"
+    override val description = "برنامه‌ها، جستجو، دستگاه و تنظیمات"
+    override fun tools() = listOf<Tool>(
+        OpenAppTool(context), SearchWebTool(context), BatteryTool(context),
+        DeviceSummaryTool(context), ListAppsTool(context), FlashlightTool(context),
+        SettingsTool(context), SemanticAppSearchTool(context)
+    )
+}
+
+class CommunicationSkill(private val context: Context) : AgentSkill {
+    override val id = "communication"
+    override val description = "تماس، پیامک، صندوق صوتی و ایمیل"
+    override fun tools() = listOf<Tool>(
+        PhoneCallTool(context), SmsInboxTool(context), SmsComposeTool(context),
+        CallLogTool(context), VoicemailTool(context), EmailComposeTool(context)
+    )
+}
+
+class PersonalizationSkill(private val context: Context) : AgentSkill {
+    override val id = "personalization"
+    override val description = "حالت‌ها، داشبورد، حافظه و حریم خصوصی"
+    override fun tools() = listOf<Tool>(
+        ActivateModeTool(context), DailyDashboardTool(context),
+        RememberFactTool(context), ShowMemoryTool(context), ClearMemoryTool(context),
+        PrivacyModeTool(context)
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -272,26 +311,11 @@ class SamAgent(
     init { registerDefaultTools() }
 
     private fun registerDefaultTools() {
-        toolRegistry.register(OpenAppTool(context))
-        toolRegistry.register(SearchWebTool(context))
-        toolRegistry.register(BatteryTool(context))
-        toolRegistry.register(DeviceSummaryTool(context))
-        toolRegistry.register(ListAppsTool(context))
-        toolRegistry.register(FlashlightTool(context))
-        toolRegistry.register(SettingsTool(context))
-        toolRegistry.register(PhoneCallTool(context))
-        toolRegistry.register(SmsInboxTool(context))
-        toolRegistry.register(SmsComposeTool(context))
-        toolRegistry.register(CallLogTool(context))
-        toolRegistry.register(VoicemailTool(context))
-        toolRegistry.register(EmailComposeTool(context))
-        toolRegistry.register(ActivateModeTool(context))
-        toolRegistry.register(DailyDashboardTool(context))
-        toolRegistry.register(RememberFactTool(context))
-        toolRegistry.register(ShowMemoryTool(context))
-        toolRegistry.register(ClearMemoryTool(context))
-        toolRegistry.register(SemanticAppSearchTool(context))
-        toolRegistry.register(PrivacyModeTool(context))
+        listOf(
+            CoreSkill(context),
+            CommunicationSkill(context),
+            PersonalizationSkill(context)
+        ).forEach(toolRegistry::registerSkill)
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {

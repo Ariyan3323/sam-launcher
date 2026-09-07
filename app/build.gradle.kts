@@ -15,8 +15,8 @@ android {
         applicationId = System.getenv("APPID") ?: "com.ariyan3323.samlauncher.install"
         minSdk = 16
         targetSdk = 36
-        versionCode = 65
-        versionName = "2.1.5"
+        versionCode = 66
+        versionName = "2.1.6"
         buildConfigField("String", "GEMINI_API_KEY", "\"${System.getenv("GEMINI_API_KEY") ?: ""}\"")
 
         multiDexEnabled = true

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">非表示のアクティビティを起動し、インストールされたアプリのショートカットを作成します</string>
     <string name="title_fragment_package_list">インストール済みパッケージ</string>
     <string name="title_fragment_activity_list">アクティビティ</string>

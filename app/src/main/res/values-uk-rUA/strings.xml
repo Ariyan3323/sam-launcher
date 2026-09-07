@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Лаунчер Активіті</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Запускає приховані активіті та створює ярлики для встановлених додатків</string>
     <string name="title_fragment_package_list">Встановлені пакети</string>
     <string name="title_fragment_activity_list">Активіті</string>

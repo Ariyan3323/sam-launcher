@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Գործարկում է թաքնված գործողություններ և ստեղծում է տեղադրված հավելվածների համար կարճուղիներ:</string>
     <string name="title_fragment_package_list">Տեղադրված փաթեթներ</string>
     <string name="title_fragment_activity_list">Գործողություններ</string>

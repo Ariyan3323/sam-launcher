@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">एक्टिविटी लॉन्चर</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">छुपे हुए फीचर्स को चालू करें तथा ऐप्स के लिए शॉर्टकट्स बनाएं</string>
     <string name="title_fragment_package_list">इंस्टॉल किए गए पैकेज</string>
     <string name="title_fragment_activity_list">गतिविधियाँ</string>

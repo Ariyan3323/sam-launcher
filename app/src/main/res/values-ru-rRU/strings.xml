@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Запуск Activity</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Запускает скрытые действия установленных приложений и создает ярлыки с ними</string>
     <string name="title_fragment_package_list">Установленные пакеты</string>
     <string name="title_fragment_activity_list">Активность</string>

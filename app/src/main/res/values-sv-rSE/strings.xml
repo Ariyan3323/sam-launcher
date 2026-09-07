@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Startar dolda aktiviteter och skapar genvägar för installerade appar</string>
     <string name="title_fragment_package_list">Installerade paket</string>
     <string name="title_fragment_activity_list">Aktiviteter</string>

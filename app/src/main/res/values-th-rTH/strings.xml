@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ตัวเรียกใช้งาน Activity</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">เปิดกิจกรรมที่ซ่อนอยู่และสร้างทางลัดสำหรับแอปที่ติดตั้ง</string>
     <string name="title_fragment_package_list">แอปที่ติดตั้งแล้ว</string>
     <string name="title_fragment_activity_list">activities ทั้งหมด</string>

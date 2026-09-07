@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Aktiwiteit Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Begin versteekte aktiwiteite en skep kortpaaie vir geïnstalleerde programme</string>
     <string name="title_fragment_package_list">Geïnstalleerde pakkette</string>
     <string name="title_fragment_activity_list">Aktiwiteite</string>

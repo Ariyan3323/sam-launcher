@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Qu\' taghmoHwI\'</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Qu\' So\'lu\'bogh taghmoH \'ej nIqHom lI\'lu\'boghvaD qIgh chenmoH</string>
     <string name="title_fragment_package_list">Installed packages</string>
     <string name="title_fragment_activity_list">Activities</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tevékenység Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Elindítja a rejtett tevékenységeket és parancsikonokat készít az alkalmazásokhoz</string>
     <string name="title_fragment_package_list">Telepített csomagok</string>
     <string name="title_fragment_activity_list">Tevékenységek</string>

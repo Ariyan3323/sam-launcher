@@ -12,11 +12,11 @@ android {
 
     defaultConfig {
         // Stable package name for local/debug installs.
-        applicationId = System.getenv("APPID") ?: "com.ariyan3323.samlauncher"
+        applicationId = System.getenv("APPID") ?: "com.ariyan3323.samlauncher.install"
         minSdk = 16
         targetSdk = 36
-        versionCode = 64
-        versionName = "2.1.4"
+        versionCode = 65
+        versionName = "2.1.5"
 
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

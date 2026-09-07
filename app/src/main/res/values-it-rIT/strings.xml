@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Avvia le attività nascoste e crea collegamenti nella schermata home</string>
     <string name="title_fragment_package_list">Pacchetti installati</string>
     <string name="title_fragment_activity_list">Attività</string>

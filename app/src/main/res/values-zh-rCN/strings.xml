@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">活动启动器</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">启动隐藏活动并为已安装的应用创建快捷方式</string>
     <string name="title_fragment_package_list">已安装的软件包</string>
     <string name="title_fragment_activity_list">活动</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Destpêkera Çalakiyê</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Çalakiyên veşartî dide destpêkirin û ji bo sepanên sazkirî kurterêyan diafirîne</string>
     <string name="title_fragment_package_list">Pakêtên sazkirî</string>
     <string name="title_fragment_activity_list">Çalakî</string>

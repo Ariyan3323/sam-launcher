@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Pokretač Aktivnosti</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Покреће скривене активности и прави пречице за инсталиране апликације. </string>
     <string name="title_fragment_package_list">Инсталирани пакети</string>
     <string name="title_fragment_activity_list">Активности</string>

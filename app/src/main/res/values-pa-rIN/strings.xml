@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ਐਕਟੀਵਿਟੀ ਲਾਂਚਰ</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">ਸਥਾਪਤ ਐਪਾਂ ਲਈ ਲੁਕੀਆਂ ਹੋਈਆਂ ਗਤੀਵਿਧੀਆਂ ਲਾਂਚ ਕਰਦਾ ਹੈ ਅਤੇ ਸ਼ਾਰਟਕੱਟ ਬਣਾਉਂਦਾ ਹੈ</string>
     <string name="title_fragment_package_list">ਸਥਾਪਤ ਪੈਕੇਜ</string>
     <string name="title_fragment_activity_list">ਗਤੀਵਿਧੀਆਂ</string>

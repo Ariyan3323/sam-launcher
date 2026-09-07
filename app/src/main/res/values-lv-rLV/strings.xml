@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Darbības Palaidējs</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Izpilda lietotnes slēptās darbības un izveido saīsnes no uzstādītajām lietotnēm</string>
     <string name="title_fragment_package_list">Uzstādītās lietotnes</string>
     <string name="title_fragment_activity_list">Darbības</string>

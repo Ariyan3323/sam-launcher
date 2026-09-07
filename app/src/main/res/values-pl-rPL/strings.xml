@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Uruchamiacz aktywności</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Startuje ukryte działalności i tworzy skróty na ekranie głównym</string>
     <string name="title_fragment_package_list">Zainstalowane pakiety</string>
     <string name="title_fragment_activity_list">Aktywności</string>

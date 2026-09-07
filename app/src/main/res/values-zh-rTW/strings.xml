@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">啟動隱藏的活動並為已安裝的應用程式建立捷徑</string>
     <string name="title_fragment_package_list">已安裝的套件</string>
     <string name="title_fragment_activity_list">活動</string>

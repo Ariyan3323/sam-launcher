@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Llança activitats amagades i crea dreceres per a les aplicacions instal·lades</string>
     <string name="title_fragment_package_list">Paquets instal·lats</string>
     <string name="title_fragment_activity_list">Activitats</string>

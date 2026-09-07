@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">액티비티 런처</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">숨겨진 액티비티를 시작하고 설치된 앱에 대한 바로 가기를 만듭니다.</string>
     <string name="title_fragment_package_list">설치한 패키지</string>
     <string name="title_fragment_activity_list">액티비티</string>

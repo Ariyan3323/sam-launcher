@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">پوشیدہ سرگرمیوں کو شروع کرتا ہے اور انسٹال شدہ ایپس کے لیے شارٹ کٹس بناتا ہے</string>
     <string name="title_fragment_package_list">انسٹال شدہ پیکجز</string>
     <string name="title_fragment_activity_list">سرگرمیاں</string>

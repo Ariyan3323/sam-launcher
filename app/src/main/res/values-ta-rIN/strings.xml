@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">செயல்பாடு துவக்கி</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">மறைக்கப்பட்ட செயல்பாடுகளைத் தொடங்கி நிறுவப்பட்ட செயலிகளுக்கான குறுக்கு வழிகளை உருவாக்குகிறது</string>
     <string name="title_fragment_package_list">நிறுவப்பட்ட தொகுப்புகள்</string>
     <string name="title_fragment_activity_list">நடவடிக்கைகள்</string>

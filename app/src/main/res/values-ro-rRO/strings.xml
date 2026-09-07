@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Lansator Activități</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Lansează activități ascunse și creează comenzi rapide pentru aplic. ascunse</string>
     <string name="title_fragment_package_list">Pachete instalate</string>
     <string name="title_fragment_activity_list">Activități</string>

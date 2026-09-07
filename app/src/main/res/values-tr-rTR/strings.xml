@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Gizli etkinlikleri başlatır ve yüklü uygulamalar için kısayollar oluşturur</string>
     <string name="title_fragment_package_list">Yüklü paketler</string>
     <string name="title_fragment_activity_list">Faaliyetler</string>

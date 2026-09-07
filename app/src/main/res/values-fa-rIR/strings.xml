@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">اکتیویتی لانچر</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">فعالبت‌های مخفی را نمایش می‌دهد و برای برنامه‌های نصب شده میان‌بر درست می‌کند</string>
     <string name="title_fragment_package_list">بسته‌های نصب‌شده</string>
     <string name="title_fragment_activity_list">فعالیت‌ها</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Activity Launcher</string>
+    <string name="app_name">Sam Launcher</string>
     <string name="short_description">Spouští skryté aktivity a\u00a0vytváří zástupce pro nainstalované aplikace</string>
     <string name="title_fragment_package_list">Instalované balíčky</string>
     <string name="title_fragment_activity_list">Aktivity</string>

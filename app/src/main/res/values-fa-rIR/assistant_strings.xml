@@ -23,4 +23,5 @@
     <string name="assistant_opening">%1$s در حال باز شدن است.</string>
     <string name="assistant_searching">در حال جست‌وجوی %1$s در وب.</string>
     <string name="assistant_cache_guidance">کش خود دستیار پاک شد. اندروید به لانچرها اجازهٔ پاک‌کردن کش برنامه‌های دیگر را نمی‌دهد؛ تنظیمات حافظه باز شد تا آن را ایمن مدیریت کنید.</string>
+    <string name="assistant_thinking">رعد در حال فکر کردن است…</string>
 </resources>

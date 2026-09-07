@@ -23,6 +23,7 @@
     <string name="assistant_opening">Opening %1$s.</string>
     <string name="assistant_searching">Searching the web for %1$s.</string>
     <string name="assistant_cache_guidance">Android does not let normal launchers clear other apps’ caches. I opened Storage settings so you can manage it safely.</string>
+    <string name="assistant_thinking">Raad is thinking…</string>
     <string name="app_name">Sam Launcher</string>
     <string name="short_description">Launches hidden activities and creates shortcuts for installed apps</string>
     <string name="title_fragment_package_list">Installed packages</string>

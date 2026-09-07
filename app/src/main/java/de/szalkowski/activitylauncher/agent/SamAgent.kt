@@ -12,6 +12,7 @@ import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Calendar
 import java.util.Locale
 
 // ══════════════════════════════════════════════════════════════
@@ -273,6 +274,8 @@ class SamAgent(
         toolRegistry.register(OpenAppTool(context))
         toolRegistry.register(SearchWebTool())
         toolRegistry.register(BatteryTool(context))
+        toolRegistry.register(DeviceSummaryTool(context))
+        toolRegistry.register(ListAppsTool(context))
         toolRegistry.register(FlashlightTool(context))
         toolRegistry.register(SettingsTool(context))
     }
@@ -378,6 +381,43 @@ class BatteryTool(private val context: Context) : Tool {
         val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         val level = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         return ToolResult(true, "باتری: $level٪")
+    }
+}
+
+class DeviceSummaryTool(private val context: Context) : Tool {
+    override val name = "device_summary"
+    override val description = "ارائهٔ خلاصهٔ وضعیت دستگاه شامل باتری، ساعت، نسخهٔ اندروید و تعداد برنامه‌ها"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val now = Calendar.getInstance()
+        val time = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
+        val appCount = context.packageManager.getInstalledApplications(PackageManager.MATCH_ALL).size
+        val summary = "باتری: $battery٪؛ ساعت: $time؛ اندروید: ${android.os.Build.VERSION.RELEASE}; برنامه‌های نصب‌شده: $appCount"
+        return ToolResult(true, summary)
+    }
+}
+
+class ListAppsTool(private val context: Context) : Tool {
+    override val name = "list_apps"
+    override val description = "نمایش چند برنامهٔ نصب‌شده برای کمک به پیدا کردن برنامهٔ موردنظر"
+    override val parameters = listOf(ParamSchema("query", "string", "بخشی از نام برنامه؛ خالی برای چند برنامهٔ اخیر", false))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val query = args.optString("query").trim().lowercase(Locale.getDefault())
+        val pm = context.packageManager
+        val apps = pm.getInstalledApplications(PackageManager.MATCH_ALL)
+            .asSequence()
+            .map { it.loadLabel(pm).toString() }
+            .filter { query.isBlank() || it.lowercase(Locale.getDefault()).contains(query) }
+            .distinct()
+            .sorted()
+            .take(12)
+            .toList()
+        return if (apps.isEmpty()) ToolResult(false, "برنامه‌ای مطابق جستجو پیدا نشد.")
+        else ToolResult(true, "برنامه‌ها: ${apps.joinToString("، ")}")
     }
 }
 

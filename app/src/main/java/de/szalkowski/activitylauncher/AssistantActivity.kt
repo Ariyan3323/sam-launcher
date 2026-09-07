@@ -185,6 +185,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.startsWith("search ") -> searchWeb(rawCommand.removePrefixIgnoreCase("search ").trim())
             command.startsWith("جستجو ") -> searchWeb(rawCommand.removePrefix("جستجو ").trim())
             command.contains("battery") || command.contains("باتری") -> respond(getString(R.string.assistant_battery_status, batteryLevel))
+            command.contains("device status") || command.contains("وضعیت") || command.contains("خلاصه") -> respond(localDeviceSummary())
             command.contains("time") || command.contains("ساعت") -> respond(currentTime())
             command.contains("clock code") || command.contains("کد ساعت") -> exportClockCode()
             command.contains("clear cache") || (command.contains("پاک") && command.contains("کش")) -> openStorageSettings()
@@ -225,6 +226,12 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (settingsIntent.resolveActivity(packageManager) != null) {
             startActivity(settingsIntent); respond(getString(R.string.assistant_opening_settings))
         } else respond(getString(R.string.assistant_browser_unavailable))
+    }
+
+    private fun localDeviceSummary(): String {
+        val now = Calendar.getInstance()
+        val time = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
+        return "وضعیت دستگاه: باتری ${batteryLevel}٪؛ ساعت $time؛ اندروید ${android.os.Build.VERSION.RELEASE}؛ حالت محلی فعال است."
     }
 
     private fun currentTime(): String {

@@ -64,6 +64,9 @@ class PackageListFragment : Fragment() {
             if (BuildConfig.GEMINI_API_KEY.isNotBlank()) R.string.launcher_agent_online
             else R.string.launcher_agent_local
         )
+        binding.agentDemoButton.setOnClickListener {
+            openAssistant(getString(R.string.launcher_agent_demo_command))
+        }
         binding.agentAskButton.setOnClickListener {
             openAssistant(binding.agentCommandInput.text?.toString().orEmpty())
         }

@@ -36,6 +36,9 @@
     <string name="launcher_agent_ask">Ask</string>
     <string name="launcher_agent_battery">Battery</string>
     <string name="launcher_agent_settings">Settings</string>
+    <string name="launcher_agent_capabilities">Open apps · search web · device summary · app finder · battery · flashlight · settings</string>
+    <string name="launcher_agent_demo">Try demo</string>
+    <string name="launcher_agent_demo_command">وضعیت کامل دستگاه را بگو</string>
     <string name="launcher_agent_online">Gemini online</string>
     <string name="launcher_agent_local">Local mode</string>
     <string name="app_name">Sam Launcher</string>

@@ -30,6 +30,7 @@
     <string name="assistant_agent_error">Super agent: request failed; local mode available</string>
     <string name="assistant_agent_tools">Tools used: %1$s</string>
     <string name="launcher_agent_title">Sam AI</string>
+    <string name="launcher_agent_subtitle">Your intelligent launcher companion</string>
     <string name="launcher_agent_ready">Ready</string>
     <string name="launcher_agent_hint">Ask Sam anything…</string>
     <string name="launcher_agent_ask">Ask</string>

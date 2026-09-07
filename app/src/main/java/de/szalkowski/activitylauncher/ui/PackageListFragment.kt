@@ -1,11 +1,13 @@
 package de.szalkowski.activitylauncher.ui
 
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -26,6 +28,7 @@ class PackageListFragment : Fragment() {
     internal lateinit var viewIntentParserService: ViewIntentParserService
 
     private var _binding: FragmentPackageListBinding? = null
+    private var pulseAnimator: ObjectAnimator? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -66,6 +69,13 @@ class PackageListFragment : Fragment() {
         }
         binding.agentBatteryButton.setOnClickListener { openAssistant("باتری را بررسی کن") }
         binding.agentSettingsButton.setOnClickListener { openAssistant("تنظیمات را باز کن") }
+        pulseAnimator = ObjectAnimator.ofFloat(binding.agentPulse, View.ALPHA, 0.45f, 1f).apply {
+            duration = 1100L
+            repeatMode = ObjectAnimator.REVERSE
+            repeatCount = ObjectAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            start()
+        }
 
         runCatching {
             val intent = activity?.intent ?: return
@@ -90,6 +100,8 @@ class PackageListFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        pulseAnimator?.cancel()
+        pulseAnimator = null
         super.onDestroyView()
         _binding = null
     }

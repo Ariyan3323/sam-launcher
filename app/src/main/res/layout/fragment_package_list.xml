@@ -12,8 +12,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="2dp"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="3dp"
+        app:rippleColor="?attr/colorPrimary"
+        app:strokeColor="?attr/colorOutlineVariant"
         app:strokeWidth="1dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="14dp">
+            android:padding="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -32,27 +35,56 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    android:id="@+id/agentPulse"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="●"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="18sp" />
+
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/launcher_agent_title"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
-                    android:textStyle="bold" />
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/launcher_agent_title"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/launcher_agent_subtitle"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/agentStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/launcher_agent_ready"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption" />
+                    android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                    android:textColor="?attr/colorPrimary" />
             </LinearLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="14dp"
                 android:hint="@string/launcher_agent_hint"
-                app:boxBackgroundMode="outline">
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusBottomEnd="18dp"
+                app:boxCornerRadiusBottomStart="18dp"
+                app:boxCornerRadiusTopEnd="18dp"
+                app:boxCornerRadiusTopStart="18dp"
+                app:boxStrokeColor="?attr/colorPrimary">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/agentCommandInput"
@@ -65,24 +97,28 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/agentAskButton"
+                    app:backgroundTint="?attr/colorSecondaryContainer"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/launcher_agent_ask" />
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/agentBatteryButton"
+                    app:backgroundTint="?attr/colorSurfaceVariant"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/launcher_agent_battery" />
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/agentSettingsButton"
+                    app:backgroundTint="?attr/colorSurfaceVariant"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/launcher_agent_settings" />

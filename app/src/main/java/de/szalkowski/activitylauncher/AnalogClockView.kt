@@ -79,8 +79,8 @@ class AnalogClockView @JvmOverloads constructor(
             )
         }
         drawHand(canvas, cx, cy, radius * .5f, (hour % 12) * 30 + minute * .5 - 90, hourHand)
-        drawHand(canvas, cx, cy, radius * .7f, minute * 6 - 90, minuteHand)
-        drawHand(canvas, cx, cy, radius * .85f, second * 6 - 90, secondHand)
+        drawHand(canvas, cx, cy, radius * .7f, minute * 6.0 - 90.0, minuteHand)
+        drawHand(canvas, cx, cy, radius * .85f, second * 6.0 - 90.0, secondHand)
         canvas.drawCircle(cx, cy, 8f, secondHand)
     }
 

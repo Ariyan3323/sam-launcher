@@ -43,6 +43,10 @@ These actions intentionally hand control to the user. Sam does not silently plac
 
 Agent tools are grouped into independent `core`, `communication`, and `personalization` skills. Each skill exposes an identifier, description, and tool list through the registry, so future calendar, weather, notes, or third-party integrations can be added without expanding the SamAgent orchestration loop.
 
+### Provider-free operation
+
+Sam does not require a GPT/OpenAI key. Phone actions run locally through Android intents, explicit web searches open the browser directly, Gemini is optional for natural conversation, and the local command engine remains available when no cloud provider is reachable.
+
 ### Multi-step workflows
 
 Sam can execute a bounded sequence of commands in order, stopping when a step fails. Up to six steps are supported. Persian and English separators include:

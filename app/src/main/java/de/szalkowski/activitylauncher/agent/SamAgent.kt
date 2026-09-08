@@ -30,6 +30,7 @@ data class AgentConfig(
         - وضعیت فعلی دستگاه را در نظر بگیر (باتری، ساعت).
     """.trimIndent(),
     val geminiApiKey: String = "YOUR_GEMINI_API_KEY_HERE",
+    val openAiApiKey: String = "",
     val model: String = "gemini-3.6-flash",
     val maxMemoryTurns: Int = 10
 )
@@ -182,7 +183,8 @@ data class ToolCall(val name: String, val args: JSONObject)
 data class AgentResponse(
     val text: String,
     val needsToolCall: Boolean,
-    val toolCall: ToolCall? = null
+    val toolCall: ToolCall? = null,
+    val successful: Boolean = true
 )
 
 data class AgentOutput(
@@ -257,7 +259,53 @@ class LlmClient(private val config: AgentConfig) {
         }
 
         conn.disconnect()
-        return@withContext parseResponse(responseBody, responseCode == 200)
+        val geminiResponse = parseResponse(responseBody, responseCode == 200)
+        if (geminiResponse.successful || config.openAiApiKey.isBlank()) return@withContext geminiResponse
+        return@withContext openAiChat(userMessage, memory, contextInfo)
+    }
+
+    private fun openAiChat(userMessage: String, memory: AgentMemory, contextInfo: String): AgentResponse {
+        return runCatching {
+            val messages = JSONArray().apply {
+                put(JSONObject().apply {
+                    put("role", "system")
+                    put("content", "${config.personality}\n\nوضعیت دستگاه: $contextInfo")
+                })
+                memory.getHistory().forEach { message ->
+                    put(JSONObject().apply {
+                        put("role", if (message.role == "model") "assistant" else message.role)
+                        put("content", message.content)
+                    })
+                }
+            }
+            val body = JSONObject().apply {
+                put("model", "gpt-4o-mini")
+                put("messages", messages)
+                put("temperature", 0.7)
+                put("max_tokens", 512)
+            }
+            val conn = (URL("https://api.openai.com/v1/chat/completions").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("Authorization", "Bearer ${config.openAiApiKey}")
+                doOutput = true
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+            val code = conn.responseCode
+            val responseBody = (if (code == 200) conn.inputStream else conn.errorStream)
+                ?.bufferedReader()?.readText().orEmpty()
+            conn.disconnect()
+            if (code != 200) return@runCatching AgentResponse(
+                text = "هر دو سرویس هوش مصنوعی در دسترس نیستند؛ حالت محلی سام فعال است.",
+                needsToolCall = false,
+                successful = false
+            )
+            val text = JSONObject(responseBody).optJSONArray("choices")
+                ?.optJSONObject(0)?.optJSONObject("message")?.optString("content").orEmpty()
+            AgentResponse(text = text.ifBlank { "پاسخی دریافت نشد." }, needsToolCall = false)
+        }.getOrElse {
+            AgentResponse("اتصال Gemini و OpenAI برقرار نشد؛ حالت محلی سام فعال است.", false, successful = false)
+        }
     }
 
     private fun parseResponse(body: String, success: Boolean): AgentResponse {
@@ -273,7 +321,7 @@ class LlmClient(private val config: AgentConfig) {
                     else -> "ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است."
                 }
             }.getOrDefault("ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است.")
-            return AgentResponse(text = friendly, needsToolCall = false)
+            return AgentResponse(text = friendly, needsToolCall = false, successful = false)
         }
 
         return try {
@@ -304,7 +352,7 @@ class LlmClient(private val config: AgentConfig) {
 
             AgentResponse(text = textResponse, needsToolCall = toolCall != null, toolCall = toolCall)
         } catch (e: Exception) {
-            AgentResponse(text = "خطا در پردازش پاسخ: ${e.message}", needsToolCall = false)
+            AgentResponse(text = "خطا در پردازش پاسخ؛ حالت محلی سام فعال است.", needsToolCall = false, successful = false)
         }
     }
 }

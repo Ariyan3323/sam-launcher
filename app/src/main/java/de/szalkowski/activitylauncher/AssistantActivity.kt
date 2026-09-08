@@ -107,7 +107,14 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         codeWriter = CodeWriter(this)
         personalMemory = PersonalMemory(this)
         privacyGuard = PrivacyGuard(this)
-        agent = SamAgent(this, AgentConfig(name = "سام", geminiApiKey = BuildConfig.GEMINI_API_KEY))
+        agent = SamAgent(
+            this,
+            AgentConfig(
+                name = "سام",
+                geminiApiKey = BuildConfig.GEMINI_API_KEY,
+                openAiApiKey = BuildConfig.OPENAI_API_KEY
+            )
+        )
         updateAgentStatus()
         binding.command.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND) { submitCommand(); true } else false
@@ -184,7 +191,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun runCommand(rawCommand: String) {
         binding.command.setText(rawCommand)
-        if (BuildConfig.GEMINI_API_KEY.isConfigured()) {
+        if (BuildConfig.GEMINI_API_KEY.isConfigured() || BuildConfig.OPENAI_API_KEY.isConfigured()) {
             runAgentCommand(rawCommand)
         } else {
             updateAgentStatus()
@@ -201,7 +208,11 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 .onSuccess { output ->
                     withContext(Dispatchers.Main) {
                         updateAgentStatus(output.success)
-                        binding.bubble.setState(if (output.success) AssistantBubbleView.State.READY else AssistantBubbleView.State.ERROR)
+                        binding.bubble.setState(if (output.success) AssistantBubbleView.State.READY else AssistantBubbleView.State.THINKING)
+                        if (!output.success) {
+                            runLocalCommand(rawCommand)
+                            return@withContext
+                        }
                         val tools = output.executedTools.distinct()
                         val reply = if (tools.isEmpty()) output.reply
                         else "${output.reply}\n\n${getString(R.string.assistant_agent_tools, tools.joinToString(", "))}"
@@ -219,7 +230,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun updateAgentStatus(success: Boolean? = null) {
-        val keyConfigured = BuildConfig.GEMINI_API_KEY.isConfigured()
+        val keyConfigured = BuildConfig.GEMINI_API_KEY.isConfigured() || BuildConfig.OPENAI_API_KEY.isConfigured()
         binding.agentStatus.text = when {
             success == false -> getString(R.string.assistant_agent_error)
             keyConfigured && success != false -> getString(R.string.assistant_agent_online)

@@ -191,12 +191,25 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun runCommand(rawCommand: String) {
         binding.command.setText(rawCommand)
-        if (BuildConfig.GEMINI_API_KEY.isConfigured() || BuildConfig.OPENAI_API_KEY.isConfigured()) {
+        if (isDeterministicPhoneCommand(rawCommand)) {
+            updateAgentStatus()
+            runLocalCommand(rawCommand)
+        } else if (BuildConfig.GEMINI_API_KEY.isConfigured() || BuildConfig.OPENAI_API_KEY.isConfigured()) {
             runAgentCommand(rawCommand)
         } else {
             updateAgentStatus()
             runLocalCommand(rawCommand)
         }
+    }
+
+    private fun isDeterministicPhoneCommand(rawCommand: String): Boolean {
+        val command = rawCommand.lowercase(Locale.ROOT)
+        return listOf(
+            "باتری", "battery", "ساعت", "time", "تنظیمات", "settings", "وضعیت", "خلاصه",
+            "باز کن", "open ", "تماس بگیر", "call ", "پیامک", "sms", "ایمیل", "email",
+            "حالت کار", "work mode", "حالت رانندگی", "driving mode", "حالت خواب", "sleep mode",
+            "حافظه", "remember ", "به خاطر بسپار", "حریم خصوصی", "privacy mode", "حالت مهمان", "guest mode"
+        ).any(command::contains)
     }
 
     private fun runAgentCommand(rawCommand: String) {

@@ -207,6 +207,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         return listOf(
             "باتری", "battery", "ساعت", "time", "تنظیمات", "settings", "وضعیت", "خلاصه",
             "باز کن", "open ", "تماس بگیر", "call ", "پیامک", "sms", "ایمیل", "email",
+            "جستجو", "search", "در وب", "در اینترنت",
             "حالت کار", "work mode", "حالت رانندگی", "driving mode", "حالت خواب", "sleep mode",
             "حافظه", "remember ", "به خاطر بسپار", "حریم خصوصی", "privacy mode", "حالت مهمان", "guest mode"
         ).any(command::contains)

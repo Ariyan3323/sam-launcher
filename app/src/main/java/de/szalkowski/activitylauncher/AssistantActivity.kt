@@ -329,8 +329,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
         val match = directMatch ?: SemanticAppSearch.findMatches(this, normalized, 1).firstOrNull()
         val launchIntent = match?.let { packageManager.getLaunchIntentForPackage(it.packageName) }
-        if (launchIntent == null) respond(getString(R.string.assistant_app_not_found, query))
-        else { startActivity(launchIntent); respond(getString(R.string.assistant_opening, match.loadLabel(packageManager))) }
+        if (launchIntent == null) {
+            respond(getString(R.string.assistant_app_not_found, query))
+        } else {
+            runCatching { startActivity(launchIntent) }
+                .onSuccess { respond(getString(R.string.assistant_opening, match.loadLabel(packageManager))) }
+                .onFailure { respond("باز کردن ${match.loadLabel(packageManager)} ممکن نشد؛ برنامه را از فهرست لانچر امتحان کن.") }
+        }
     }
 
     private fun prepareCall(rawCommand: String) {

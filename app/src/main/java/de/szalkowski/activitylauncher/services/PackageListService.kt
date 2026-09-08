@@ -87,10 +87,6 @@ class PackageListServiceImpl @Inject constructor(
     private fun getDefaultActivityName(
         packageName: String, appRes: Resources?
     ): ActivityName? {
-        if (appRes == null) {
-            return null
-        }
-
         return runCatching {
             val defaultIntent = packageManager.getLaunchIntentForPackage(packageName)
             val activityInfo =

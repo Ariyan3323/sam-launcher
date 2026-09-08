@@ -51,11 +51,29 @@ class PackageListFragment : Fragment() {
         }
 
         packageListAdapter.onItemClick = {
+            val launchIntent = requireContext().packageManager
+                .getLaunchIntentForPackage(it.packageName)
+                ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+            if (launchIntent != null) {
+                runCatching { startActivity(launchIntent) }
+                    .onFailure { error ->
+                        Log.e("PackageList", "Could not launch ${it.packageName}", error)
+                        Toast.makeText(requireContext(), getString(R.string.error) + ": ${it.name}", Toast.LENGTH_SHORT).show()
+                    }
+            } else {
+                runCatching {
+                    val action = PackageListFragmentDirections.actionSelectPackage(it.packageName)
+                    findNavController().navigate(action)
+                }.onFailure { error -> Log.e("Navigation", "Could not open app details", error) }
+            }
+
+        }
+        packageListAdapter.onItemLongClick = {
             runCatching {
                 val action = PackageListFragmentDirections.actionSelectPackage(it.packageName)
                 findNavController().navigate(action)
-            }.onFailure { Log.e("Navigation", "Error while navigating from PackageListFragment") }
-
+            }.onFailure { error -> Log.e("Navigation", "Could not open app details", error) }
+            true
         }
         binding.rvPackages.adapter = packageListAdapter
         binding.rvPackages.isNestedScrollingEnabled = false

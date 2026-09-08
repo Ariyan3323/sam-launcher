@@ -20,6 +20,7 @@ class PackageListAdapter @Inject constructor(packageListService: PackageListServ
     private var filteredPackages = allPackages
 
     var onItemClick: ((MyPackageInfo) -> Unit)? = null
+    var onItemLongClick: ((MyPackageInfo) -> Boolean)? = null
 
     inner class ViewHolder(viewItem: View) : RecyclerView.ViewHolder(viewItem) {
         lateinit var item: MyPackageInfo
@@ -27,6 +28,9 @@ class PackageListAdapter @Inject constructor(packageListService: PackageListServ
         init {
             itemView.setOnClickListener {
                 onItemClick?.invoke(item)
+            }
+            itemView.setOnLongClickListener {
+                onItemLongClick?.invoke(item) ?: false
             }
         }
     }

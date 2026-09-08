@@ -1,8 +1,16 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Base.Theme.ActivityLauncher" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/sam_night</item>
+        <item name="android:navigationBarColor">@color/sam_night</item>
+        <item name="android:windowBackground">@color/sam_night</item>
+        <item name="colorSurface">@color/sam_surface</item>
+        <item name="colorPrimary">@color/sam_primary</item>
+        <item name="colorSecondary">@color/sam_secondary</item>
+        <item name="colorTertiary">@color/sam_tertiary</item>
+        <item name="android:textColorPrimary">@color/sam_on_night</item>
     </style>
 
     <style name="Theme.ActivityLauncher" parent="Base.Theme.ActivityLauncher" />

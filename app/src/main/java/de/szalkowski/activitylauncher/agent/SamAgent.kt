@@ -317,6 +317,8 @@ class LlmClient(private val config: AgentConfig) {
                 when {
                     status == "NOT_FOUND" || message.contains("not found", ignoreCase = true) ->
                         "مدل هوش مصنوعی در دسترس نیست. حالت محلی سام همچنان فعال است؛ مدل Gemini را به‌روز کن."
+                    message.contains("location is not supported", ignoreCase = true) ->
+                        "Gemini در منطقه فعلی در دسترس نیست؛ سام به حالت محلی برگشت."
                     message.isNotBlank() -> "ارتباط با Gemini برقرار نشد: ${message.take(180)}"
                     else -> "ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است."
                 }

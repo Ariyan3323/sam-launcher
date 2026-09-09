@@ -247,6 +247,8 @@ class LlmClient(private val config: AgentConfig) {
         val conn = url.openConnection() as HttpURLConnection
         conn.requestMethod = "POST"
         conn.setRequestProperty("Content-Type", "application/json")
+        conn.connectTimeout = 7_000
+        conn.readTimeout = 12_000
         conn.doOutput = true
 
         OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
@@ -288,12 +290,14 @@ class LlmClient(private val config: AgentConfig) {
                 requestMethod = "POST"
                 setRequestProperty("Content-Type", "application/json")
                 setRequestProperty("Authorization", "Bearer ${config.openAiApiKey}")
+                connectTimeout = 7_000
+                readTimeout = 12_000
                 doOutput = true
             }
             OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
             val code = conn.responseCode
-            val responseBody = (if (code == 200) conn.inputStream else conn.errorStream)
-                ?.bufferedReader()?.readText().orEmpty()
+            val responseStream = if (code == 200) conn.inputStream else conn.errorStream
+            val responseBody = responseStream?.bufferedReader()?.readText().orEmpty()
             conn.disconnect()
             if (code != 200) return@runCatching AgentResponse(
                 text = "هر دو سرویس هوش مصنوعی در دسترس نیستند؛ حالت محلی سام فعال است.",
@@ -436,6 +440,15 @@ class SamAgent(
                     contextInfo = deviceContext
                 )
 
+                if (!response.successful) {
+                    return AgentOutput(
+                        reply = response.text,
+                        executedTools = executedTools.distinct(),
+                        responseTimeMs = System.currentTimeMillis() - startTime,
+                        success = false
+                    )
+                }
+
                 if (!response.needsToolCall) {
                     finalText = response.text
                     memory.addModel(finalText)
@@ -506,9 +519,13 @@ class OpenAppTool(private val context: Context) : Tool {
         val match = directMatch ?: SemanticAppSearch.findMatches(context, appName, 1).firstOrNull()
         val intent = match?.let { pm.getLaunchIntentForPackage(it.packageName) }
         return if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-            ToolResult(true, "برنامه ${match.loadLabel(pm)} باز شد.")
+            runCatching {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }.fold(
+                onSuccess = { ToolResult(true, "برنامه ${match.loadLabel(pm)} باز شد.") },
+                onFailure = { ToolResult(false, "باز کردن ${match.loadLabel(pm)} ممکن نشد.") }
+            )
         } else {
             ToolResult(false, "برنامه '$appName' پیدا نشد.")
         }
@@ -529,8 +546,11 @@ class SearchWebTool(private val context: Context) : Tool {
         if (intent.resolveActivity(context.packageManager) == null) {
             return ToolResult(false, "مرورگری برای انجام این جست‌وجو در دسترس نیست.")
         }
-        context.startActivity(intent)
-        return ToolResult(true, "جستجو برای: $query")
+        return runCatching { context.startActivity(intent) }
+            .fold(
+                onSuccess = { ToolResult(true, "جستجو برای: $query") },
+                onFailure = { ToolResult(false, "باز کردن مرورگر ممکن نشد.") }
+            )
     }
 }
 
@@ -589,6 +609,9 @@ class FlashlightTool(private val context: Context) : Tool {
     override val parameters = listOf(ParamSchema("state", "string", "on یا off", true))
 
     override suspend fun execute(args: JSONObject): ToolResult {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+            return ToolResult(false, "کنترل چراغ قوه در این نسخه اندروید پشتیبانی نمی‌شود.")
+        }
         val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
         val cameraId = cameraManager.cameraIdList.firstOrNull() ?: return ToolResult(false, "دوربین پیدا نشد.")
         

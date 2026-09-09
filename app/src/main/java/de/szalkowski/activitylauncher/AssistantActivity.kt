@@ -222,9 +222,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 .onSuccess { output ->
                     withContext(Dispatchers.Main) {
                         updateAgentStatus(output.success)
-                        binding.bubble.setState(if (output.success) AssistantBubbleView.State.READY else AssistantBubbleView.State.THINKING)
+                        binding.bubble.setState(if (output.success) AssistantBubbleView.State.READY else AssistantBubbleView.State.ERROR)
                         if (!output.success) {
                             runLocalCommand(rawCommand)
+                            binding.bubble.setState(AssistantBubbleView.State.READY)
                             return@withContext
                         }
                         val tools = output.executedTools.distinct()
@@ -237,7 +238,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     withContext(Dispatchers.Main) {
                         updateAgentStatus(false)
                         binding.bubble.setState(AssistantBubbleView.State.ERROR)
-                        respond(getString(R.string.assistant_agent_error) + "\n" + (error.message ?: "Unknown error"))
+                        runLocalCommand(rawCommand)
+                        binding.bubble.setState(AssistantBubbleView.State.READY)
                     }
                 }
         }

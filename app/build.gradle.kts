@@ -13,7 +13,7 @@ android {
     defaultConfig {
         // Stable package name for local/debug installs.
         applicationId = System.getenv("APPID") ?: "com.ariyan3323.samlauncher.install"
-        minSdk = 16
+        minSdk = 21
         targetSdk = 36
         versionCode = 66
         versionName = "2.1.6"
@@ -22,6 +22,9 @@ android {
 
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
 
     flavorDimensions += "distribution"
@@ -72,6 +75,9 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+    }
+    lint {
+        disable.add("MissingTranslation")
     }
 }
 

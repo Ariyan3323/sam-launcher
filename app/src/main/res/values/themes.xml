@@ -2,7 +2,6 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.ActivityLauncher" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:windowLightStatusBar">false</item>
         <item name="android:statusBarColor">@color/sam_night</item>
         <item name="android:navigationBarColor">@color/sam_night</item>
         <item name="android:windowBackground">@color/sam_night</item>

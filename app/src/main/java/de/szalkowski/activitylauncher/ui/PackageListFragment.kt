@@ -11,6 +11,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.core.widget.doAfterTextChanged
 import dagger.hilt.android.AndroidEntryPoint
 import de.szalkowski.activitylauncher.AssistantActivity
 import de.szalkowski.activitylauncher.BuildConfig
@@ -48,6 +49,11 @@ class PackageListFragment : Fragment() {
         packageListAdapter.filter = actionBar?.actionBarSearchText.orEmpty()
         actionBar?.onActionBarSearchListener = { search ->
             packageListAdapter.filter = search
+        }
+        binding.appSearchInput.doAfterTextChanged { text ->
+            val query = text?.toString().orEmpty()
+            packageListAdapter.filter = query
+            if (actionBar?.actionBarSearchText != query) actionBar?.actionBarSearchText = query
         }
 
         packageListAdapter.onItemClick = {
@@ -91,6 +97,7 @@ class PackageListFragment : Fragment() {
         binding.agentBatteryButton.setOnClickListener { openAssistant("باتری را بررسی کن") }
         binding.agentSettingsButton.setOnClickListener { openAssistant("تنظیمات را باز کن") }
         binding.appListButton.setOnClickListener {
+            binding.appSearchInput.setText("")
             packageListAdapter.filter = ""
             actionBar?.actionBarSearchText = ""
             binding.rvPackages.smoothScrollToPosition(0)

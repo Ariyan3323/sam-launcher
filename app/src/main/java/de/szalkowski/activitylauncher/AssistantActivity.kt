@@ -208,6 +208,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             "باتری", "battery", "ساعت", "time", "تنظیمات", "settings", "وضعیت", "خلاصه",
             "باز کن", "open ", "تماس بگیر", "call ", "پیامک", "sms", "ایمیل", "email",
             "جستجو", "search", "در وب", "در اینترنت",
+            "پیدا کن", "یافتن برنامه", "برنامه مناسب", "find app", "find my", "locate app",
             "حالت کار", "work mode", "حالت رانندگی", "driving mode", "حالت خواب", "sleep mode",
             "حافظه", "remember ", "به خاطر بسپار", "حریم خصوصی", "privacy mode", "حالت مهمان", "guest mode"
         ).any(command::contains)
@@ -266,6 +267,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         when {
             command.startsWith("open ") -> openApp(rawCommand.removePrefixIgnoreCase("open ").trim())
             command.startsWith("باز کن ") -> openApp(rawCommand.removePrefix("باز کن ").trim())
+            command.contains("پیدا کن") || command.contains("یافتن برنامه") ||
+                command.contains("find app") || command.contains("find my") || command.contains("locate app") ->
+                openApp(extractAppQuery(rawCommand))
             command.contains("باز کن") -> {
                 val after = rawCommand.substringAfter("باز کن").trim()
                 val before = rawCommand.substringBefore("باز کن").trim().removeSuffix("را").trim()
@@ -338,6 +342,17 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 .onSuccess { respond(getString(R.string.assistant_opening, match.loadLabel(packageManager))) }
                 .onFailure { respond("باز کردن ${match.loadLabel(packageManager)} ممکن نشد؛ برنامه را از فهرست لانچر امتحان کن.") }
         }
+    }
+
+    private fun extractAppQuery(rawCommand: String): String {
+        return rawCommand
+            .replace(Regex("(?i)find my|find app|locate app|find|open"), " ")
+            .replace("پیدا کن", " ")
+            .replace("یافتن برنامه", " ")
+            .replace("برنامه", " ")
+            .replace(Regex("(?i)را|رو|مناسب|app"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
     }
 
     private fun prepareCall(rawCommand: String) {

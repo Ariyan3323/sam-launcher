@@ -42,6 +42,7 @@
     <string name="action_view_bugs">گزارش مشکل</string>
     <string name="summary_action_view_bugs">لطفا پیشنهادها یا مشکلات خود را در صفحه GitHub پروژه درج کنید.</string>
     <string name="action_filter">پالایش…</string>
+    <string name="launcher_search_apps_hint">جستجوی برنامه‌ها</string>
     <string name="filter_hint">بسته/فعالیت</string>
     <string name="activity_settings">تنظيمات</string>
     <string name="settings_hide_private">پنهان‌سازی اکتیویتی‌های خصوصی</string>

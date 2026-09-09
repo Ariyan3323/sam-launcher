@@ -148,6 +148,29 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/appSearchLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:hint="@string/launcher_search_apps_hint"
+        app:boxBackgroundMode="outline"
+        app:boxCornerRadiusBottomEnd="18dp"
+        app:boxCornerRadiusBottomStart="18dp"
+        app:boxCornerRadiusTopEnd="18dp"
+        app:boxCornerRadiusTopStart="18dp"
+        app:startIconDrawable="@drawable/ic_search"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/agentCard">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/appSearchInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="text" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <!-- CC BY-SA 4.0 https://stackoverflow.com/a/46026362 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvPackages"
@@ -157,5 +180,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/agentCard" />
+        app:layout_constraintTop_toBottomOf="@id/appSearchLayout" />
 </androidx.constraintlayout.widget.ConstraintLayout>

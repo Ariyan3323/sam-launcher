@@ -27,6 +27,9 @@ import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Calendar
 import java.util.Locale
 
@@ -43,6 +46,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var agent: SamAgent
     private lateinit var personalMemory: PersonalMemory
     private lateinit var privacyGuard: PrivacyGuard
+    private var speakResponses = true
 
     private val voiceInput =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -151,7 +155,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = textToSpeech.setLanguage(Locale.forLanguageTag("fa-IR"))
+            val result = textToSpeech.setLanguage(Locale("fa", "IR"))
             textToSpeech.setSpeechRate(0.95f)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 textToSpeech.language = Locale.getDefault()
@@ -178,6 +182,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fa-IR")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fa-IR")
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.assistant_voice_prompt))
@@ -217,7 +222,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun runAgentCommand(rawCommand: String) {
         binding.bubble.setState(AssistantBubbleView.State.THINKING)
         binding.agentStatus.setText(R.string.assistant_thinking)
-        respond(getString(R.string.assistant_thinking))
+        respond(getString(R.string.assistant_thinking), speak = false)
         lifecycleScope.launch(Dispatchers.IO) {
             runCatching { agent.processCommand(rawCommand, deviceContext()) }
                 .onSuccess { output ->
@@ -247,10 +252,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun updateAgentStatus(success: Boolean? = null) {
-        val keyConfigured = BuildConfig.GEMINI_API_KEY.isConfigured() || BuildConfig.OPENAI_API_KEY.isConfigured()
         binding.agentStatus.text = when {
             success == false -> getString(R.string.assistant_agent_error)
-            keyConfigured && success != false -> getString(R.string.assistant_agent_online)
+            success == true -> getString(R.string.assistant_agent_online)
             else -> getString(R.string.assistant_agent_offline)
         }
     }
@@ -301,11 +305,49 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("clear cache") || (command.contains("پاک") && command.contains("کش")) -> openStorageSettings()
             command.contains("settings") || command.contains("تنظیمات") -> openSettings()
             command.contains("help") || command.contains("راهنما") -> respond(getString(R.string.assistant_help))
-            else -> respond(localConversation(rawCommand))
+            else -> {
+                val localReply = localConversation(rawCommand)
+                if (localReply != null) respond(localReply) else answerWithWebFallback(rawCommand)
+            }
         }
     }
 
-    private fun localConversation(rawCommand: String): String {
+    private fun answerWithWebFallback(question: String) {
+        val cleanQuestion = question.trim()
+        if (cleanQuestion.isBlank()) {
+            respond(getString(R.string.assistant_help))
+            return
+        }
+        binding.bubble.setState(AssistantBubbleView.State.THINKING)
+        respond("سام در حال پیدا کردن پاسخ است…", speak = false)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val answer = runCatching {
+                val endpoint = "https://api.duckduckgo.com/?q=${Uri.encode(cleanQuestion)}&format=json&no_html=1&skip_disambig=1"
+                val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 4_000
+                    readTimeout = 6_000
+                    requestMethod = "GET"
+                }
+                val body = connection.inputStream.bufferedReader().use { it.readText() }
+                connection.disconnect()
+                val json = JSONObject(body)
+                val abstractText = json.optString("AbstractText").trim()
+                if (abstractText.isNotBlank()) abstractText
+                else json.optJSONArray("RelatedTopics")?.let { topics ->
+                    (0 until topics.length()).asSequence()
+                        .mapNotNull { topics.optJSONObject(it)?.optString("Text")?.trim() }
+                        .firstOrNull { it.isNotBlank() }
+                }.orEmpty()
+            }.getOrNull()?.takeIf { it.isNotBlank() }
+            withContext(Dispatchers.Main) {
+                binding.bubble.setState(AssistantBubbleView.State.READY)
+                if (answer != null) respond(answer)
+                else respond("پاسخ فوری پیدا نشد. سام می‌تواند همین موضوع را در مرورگر باز کند.")
+            }
+        }
+    }
+
+    private fun localConversation(rawCommand: String): String? {
         val command = rawCommand.trim().lowercase(Locale.ROOT)
         return when {
             command.matches(Regex("(سلام|درود|hello|hi|hey).*")) ->
@@ -318,8 +360,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 "خواهش می‌کنم؛ هر وقت خواستی در خدمتم."
             command.contains("چه کارهایی") || command.contains("قابلیت") || command.contains("what can you do") ->
                 "می‌توانم برنامه‌ها را باز کنم، برنامه مناسب را با مفهوم پیدا کنم، باتری و ساعت را بگویم، تنظیمات و حالت‌های کار/رانندگی/خواب را باز کنم و حافظه محلی داشته باشم."
-            else ->
-                "این فرمان را هنوز دقیق متوجه نشدم. می‌توانی بگویی «باز کن دوربین»، «باتری»، «تنظیمات» یا «در وب جستجو کن ...»؟"
+            else -> null
         }
     }
 
@@ -480,9 +521,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             .onFailure { respond(getString(R.string.assistant_clock_code_export_failed)) }
     }
 
-    private fun respond(message: String) {
+    private fun respond(message: String, speak: Boolean = speakResponses) {
         binding.response.text = message
-        if (::textToSpeech.isInitialized && message.isNotBlank()) {
+        if (speak && ::textToSpeech.isInitialized && message.isNotBlank()) {
             binding.voiceStatus.setText(R.string.assistant_voice_speaking)
             textToSpeech.speak(message, TextToSpeech.QUEUE_FLUSH, null, "raad-response")
         }

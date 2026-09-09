@@ -1,6 +1,7 @@
 package de.szalkowski.activitylauncher.services
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
@@ -29,6 +30,32 @@ class PackageListServiceImpl @Inject constructor(
         get() = installedPackages
 
     private fun loadPackages(): List<MyPackageInfo> {
+        val launcherPackages = runCatching {
+            val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            packageManager.queryIntentActivities(launcherIntent, PackageManager.MATCH_DEFAULT_ONLY)
+                .distinctBy { it.activityInfo?.packageName }
+                .mapNotNull { resolved ->
+                    val packageName = resolved.activityInfo?.packageName ?: return@mapNotNull null
+                    val packageInfo = runCatching {
+                        packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
+                    }.getOrNull() ?: return@mapNotNull null
+                    runCatching {
+                        getPackageInfo(packageInfo)?.let { info ->
+                            if (info.defaultActivityName != null) info
+                            else info.copy(
+                                defaultActivityName = ActivityName(
+                                    resolved.loadLabel(packageManager).toString(),
+                                    resolved.activityInfo.name.substringAfterLast('.'),
+                                    resolved.activityInfo.name
+                                )
+                            )
+                        }
+                    }.getOrNull()
+                }
+                .sortedBy { it.name.lowercase() }
+        }.getOrDefault(emptyList())
+        if (launcherPackages.isNotEmpty()) return launcherPackages
+
         val detailed = runCatching {
             packageManager.getInstalledPackages(
                 PackageManager.GET_ACTIVITIES

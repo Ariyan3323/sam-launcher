@@ -12,6 +12,8 @@
     <string name="assistant_internet_required">برای پاسخ به این سؤال باید از وب کمک بگیرم، اما اینترنت خاموش یا قطع است. لطفاً وای‌فای یا دادهٔ همراه را روشن کنید.</string>
     <string name="assistant_web_answer_unavailable">فعلاً پاسخ سریع پیدا نشد. دوباره امتحان کنید یا جست‌وجوی وب را باز کنید.</string>
     <string name="assistant_appearance">ظاهر</string>
+    <string name="assistant_other_ai">هوش‌های دیگر</string>
+    <string name="assistant_choose_ai">انتخاب برنامهٔ هوش مصنوعی</string>
     <string name="assistant_appearance_changed">ظاهر سام تغییر کرد.</string>
     <string name="assistant_opening_settings">تنظیمات اندروید باز می‌شود.</string>
     <string name="assistant_help">مثال: باز کن &lt;نام برنامه&gt;، باتری را بررسی کن، وضعیت حافظه گوشی، پاک کردن کش گوشی، عیب‌یابی سام، آخرین پیام را بخوان یا علایق من.</string>

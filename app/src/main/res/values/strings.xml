@@ -18,6 +18,8 @@
     <string name="assistant_internet_required">I can answer this from the web, but the internet is currently unavailable. Please turn on Wi-Fi or mobile data.</string>
     <string name="assistant_web_answer_unavailable">I could not find a quick answer right now. Please try again or open a web search.</string>
     <string name="assistant_appearance">Style</string>
+    <string name="assistant_other_ai">Other AI</string>
+    <string name="assistant_choose_ai">Choose an AI app</string>
     <string name="assistant_appearance_changed">Raad has a new look.</string>
     <string name="assistant_opening_settings">Opening Android settings.</string>
     <string name="assistant_help">Try: open &lt;app&gt;, battery check, phone storage status, clear phone cache, diagnose Sam, or settings.</string>

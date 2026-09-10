@@ -140,6 +140,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             binding.bubble.nextAppearance()
             respond(getString(R.string.assistant_appearance_changed))
         }
+        binding.otherAiButton.setOnClickListener {
+            shareWithOtherAi(binding.command.text?.toString().orEmpty().trim())
+        }
         intent.getStringExtra(EXTRA_INITIAL_COMMAND)?.takeIf { it.isNotBlank() }?.let { command ->
             binding.root.post { runCommand(command) }
         }
@@ -232,6 +235,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             "پیدا کن", "یافتن برنامه", "برنامه مناسب", "find app", "find my", "locate app",
             "آخرین پیام", "آخرین اس ام اس", "last message", "latest sms", "علایق من", "چی دوست دارم",
             "هوش مصنوعی گوشی", "دستیار گوشی", "ask another ai", "other ai",
+            "هوش‌های دیگر", "هوش های دیگر", "از هوش‌های دیگر", "از هوش های دیگر", "share ai",
             "سلام", "درود", "hello", "hi", "پیامنگار", "پیام‌رسان", "اس ام اس", "پیام بده",
             "پیام بفرست", "تلگرام", "برو تل", "زنگ بزن",
             "چه خبر", "اخبار جهان", "خبرهای امروز", "اخبار مهم", "world news", "latest news",
@@ -291,6 +295,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun runLocalCommand(rawCommand: String) {
         val command = rawCommand.trim().lowercase(Locale.ROOT)
         when {
+            command.contains("هوش‌های دیگر") || command.contains("هوش های دیگر") ||
+                command.contains("از هوش‌های دیگر") || command.contains("از هوش های دیگر") ||
+                command.contains("share ai") -> shareWithOtherAi(extractSharedQuestion(rawCommand))
             command.contains("هوش مصنوعی گوشی") || command.contains("دستیار گوشی") ||
                 command.contains("ask another ai") || command.contains("other ai") -> openSystemAssistant()
             command.contains("اخبار جهان") || command.contains("خبرهای امروز") || command.contains("اخبار مهم") ||
@@ -577,6 +584,31 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         } else {
             respond("دستیار دیگری روی گوشی ثبت نشده است؛ سام و جست‌وجوی وب همچنان فعال هستند.")
         }
+    }
+
+    private fun extractSharedQuestion(rawCommand: String): String {
+        return rawCommand
+            .replace("از هوش‌های دیگر", "")
+            .replace("از هوش های دیگر", "")
+            .replace("هوش‌های دیگر", "")
+            .replace("هوش های دیگر", "")
+            .replace(Regex("(?i)share ai|ask other ai"), "")
+            .replace(Regex("(?i)این سوال را|این سؤال را|این سوال|این سؤال"), "")
+            .trim()
+            .ifBlank { binding.command.text?.toString().orEmpty().trim() }
+    }
+
+    private fun shareWithOtherAi(question: String) {
+        if (question.isBlank()) {
+            respond("سؤالت را بگو تا آن را برای هوش‌های مصنوعی دیگر بفرستم.")
+            return
+        }
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, question)
+        }
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.assistant_choose_ai)))
+        respond("سؤال آماده شد؛ یکی از هوش‌های مصنوعی نصب‌شده را انتخاب کن. سام پاسخ آن برنامه را بدون API رسمی نمی‌خواند.")
     }
 
     private fun prepareSms(rawCommand: String) {

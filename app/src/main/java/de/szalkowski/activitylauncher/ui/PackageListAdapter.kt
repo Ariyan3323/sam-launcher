@@ -38,11 +38,12 @@ class PackageListAdapter @Inject constructor(packageListService: PackageListServ
     var filter: String = ""
         set(value) {
             field = value
+            val normalizedFilter = value.normalizeSearchText()
             filteredPackages = allPackages.map { p ->
                 p.copy(
-                    activityNames = p.activityNames.filter { it.matches(field) },
+                    activityNames = p.activityNames.filter { it.matches(normalizedFilter) },
                     defaultActivityName = p.defaultActivityName?.takeIf { a ->
-                        a.matches(field) || p.matches(field)
+                        a.matches(normalizedFilter) || p.matches(normalizedFilter)
                     })
             }.filter { p ->
                 p.activityNames.isNotEmpty() || p.defaultActivityName != null
@@ -84,15 +85,19 @@ class PackageListAdapter @Inject constructor(packageListService: PackageListServ
 
 
 private fun ActivityName.matches(s: String): Boolean =
+    s.isBlank() ||
     listOf(this.name, this.shortCls).any {
-        it.contains(
-            s, ignoreCase = true
-        )
+        it.normalizeSearchText().contains(s, ignoreCase = true)
     }
 
 private fun MyPackageInfo.matches(s: String): Boolean =
+    s.isBlank() ||
     listOf(this.name, this.packageName).any {
-        it.contains(
-            s, ignoreCase = true
-        )
+        it.normalizeSearchText().contains(s, ignoreCase = true)
     }
+
+private fun String.normalizeSearchText(): String = lowercase()
+    .replace('ي', 'ی')
+    .replace('ك', 'ک')
+    .replace('ۀ', 'ه')
+    .trim()

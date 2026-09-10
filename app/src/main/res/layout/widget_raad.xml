@@ -9,4 +9,5 @@
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="◉  ◉" android:textColor="#6FF3FF" android:textSize="28sp" />
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/assistant_widget_title" android:textColor="#FFFFFF" android:textStyle="bold" />
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/assistant_widget_hint" android:textColor="#B9C8E8" android:textSize="12sp" />
+    <TextView android:id="@+id/widgetNews" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:maxLines="2" android:ellipsize="end" android:text="@string/assistant_widget_news_loading" android:textColor="#FFF1A8" android:textSize="11sp" />
 </LinearLayout>

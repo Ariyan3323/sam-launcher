@@ -7,9 +7,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.os.Bundle
+import android.os.StatFs
 import android.provider.Settings
+import android.provider.Telephony
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -47,6 +51,12 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var personalMemory: PersonalMemory
     private lateinit var privacyGuard: PrivacyGuard
     private var speakResponses = true
+    private val learningPreferences by lazy { getSharedPreferences("sam_learning", MODE_PRIVATE) }
+
+    private val smsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) readLatestSms()
+        else respond("برای خواندن آخرین پیامک، اجازهٔ خواندن پیامک لازم است.")
+    }
 
     private val voiceInput =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -182,7 +192,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fa-IR")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fa-IR")
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, false)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.assistant_voice_prompt))
@@ -191,11 +201,17 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             respond(getString(R.string.assistant_voice_unavailable))
             return
         }
-        voiceInput.launch(recognitionIntent)
+        runCatching { voiceInput.launch(recognitionIntent) }
+            .onFailure {
+                binding.bubble.setState(AssistantBubbleView.State.ERROR)
+                binding.voiceStatus.setText(R.string.assistant_voice_unavailable)
+                respond(getString(R.string.assistant_voice_unavailable))
+            }
     }
 
     private fun runCommand(rawCommand: String) {
         binding.command.setText(rawCommand)
+        learnInteraction(rawCommand)
         if (isDeterministicPhoneCommand(rawCommand)) {
             updateAgentStatus()
             runLocalCommand(rawCommand)
@@ -214,6 +230,12 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             "باز کن", "open ", "تماس بگیر", "call ", "پیامک", "sms", "ایمیل", "email",
             "جستجو", "search", "در وب", "در اینترنت",
             "پیدا کن", "یافتن برنامه", "برنامه مناسب", "find app", "find my", "locate app",
+            "آخرین پیام", "آخرین اس ام اس", "last message", "latest sms", "علایق من", "چی دوست دارم",
+            "هوش مصنوعی گوشی", "دستیار گوشی", "ask another ai", "other ai",
+            "سلام", "درود", "hello", "hi", "پیامنگار", "پیام‌رسان", "اس ام اس", "پیام بده",
+            "پیام بفرست", "تلگرام", "برو تل", "زنگ بزن",
+            "چه خبر", "اخبار جهان", "خبرهای امروز", "اخبار مهم", "world news", "latest news",
+            "سیاست", "ترید", "رمز ارز", "ارز دیجیتال", "درس", "اخبار روز",
             "حالت کار", "work mode", "حالت رانندگی", "driving mode", "حالت خواب", "sleep mode",
             "حافظه", "remember ", "به خاطر بسپار", "حریم خصوصی", "privacy mode", "حالت مهمان", "guest mode"
         ).any(command::contains)
@@ -269,6 +291,22 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun runLocalCommand(rawCommand: String) {
         val command = rawCommand.trim().lowercase(Locale.ROOT)
         when {
+            command.contains("هوش مصنوعی گوشی") || command.contains("دستیار گوشی") ||
+                command.contains("ask another ai") || command.contains("other ai") -> openSystemAssistant()
+            command.contains("اخبار جهان") || command.contains("خبرهای امروز") || command.contains("اخبار مهم") ||
+                command.contains("اخبار روز") || command.contains("world news") || command.contains("latest news") -> showWorldNews()
+            command == "چه خبر" || command.contains("چه خبر از جهان") -> showWorldNews()
+            command.contains("تلگرام") || command.contains("برو تل") || command.contains("telegram") -> openApp("telegram")
+            command.contains("پیامنگار") || command.contains("پیام‌رسان") -> openApp("پیام")
+            command.contains("اس ام اس") || command.contains("پیام بده") || command.contains("پیام بفرست") -> prepareSms(rawCommand)
+            command.contains("زنگ بزن") -> prepareCall(rawCommand)
+            command.contains("تنظیمات") || command.contains("settings") -> openSettings()
+            command.contains("بررسی باتری") || command.contains("وضعیت باتری") ||
+                command.contains("باتری") || command.contains("battery") -> respond(getString(R.string.assistant_battery_status, batteryLevel))
+            command.contains("حافظه گوشی") || command.contains("حافظه دستگاه") ||
+                command.contains("storage") || command.contains("memory status") -> respond(storageSummary())
+            command.contains("اختلال") || command.contains("عیب یابی") || command.contains("عیب‌یابی") ||
+                command.contains("diagnostic") || command.contains("check sam") -> respond(runDiagnostics())
             command.startsWith("open ") -> openApp(rawCommand.removePrefixIgnoreCase("open ").trim())
             command.startsWith("باز کن ") -> openApp(rawCommand.removePrefix("باز کن ").trim())
             command.contains("پیدا کن") || command.contains("یافتن برنامه") ||
@@ -285,25 +323,27 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("در وب جستجو") || command.contains("در اینترنت جستجو") -> searchWeb(
                 rawCommand.substringAfter("جستجو").trim()
             )
-            command.contains("battery") || command.contains("باتری") -> respond(getString(R.string.assistant_battery_status, batteryLevel))
             command.contains("device status") || command.contains("وضعیت") || command.contains("خلاصه") -> respond(localDeviceSummary())
             command.contains("time") || command.contains("ساعت") -> respond(currentTime())
             command.contains("dashboard") || command.contains("داشبورد") || command.contains("خلاصه امروز") -> respond(dailyDashboard())
             command.contains("work mode") || command.contains("حالت کار") -> activateSmartMode("کار")
             command.contains("driving mode") || command.contains("حالت رانندگی") -> activateSmartMode("رانندگی")
             command.contains("sleep mode") || command.contains("حالت خواب") -> activateSmartMode("خواب")
+            command.contains("آخرین پیام") || command.contains("آخرین اس ام اس") ||
+                command.contains("last message") || command.contains("latest sms") -> requestLatestSms()
             command.contains("تماس بگیر") || command.contains("call ") -> prepareCall(rawCommand)
             command.contains("پیامک") || command.contains("sms") -> prepareSms(rawCommand)
             command.contains("ایمیل") || command.contains("email") -> prepareEmail(rawCommand)
             command.startsWith("remember ") -> rememberFact(rawCommand.removePrefixIgnoreCase("remember ").trim())
             command.startsWith("به خاطر بسپار ") -> rememberFact(rawCommand.removePrefix("به خاطر بسپار ").trim())
             command.contains("show memory") || command.contains("حافظه من") || command.contains("چه چیزهایی را به خاطر داری") -> showMemory()
+            command.contains("علایق من") || command.contains("علاقه‌های من") || command.contains("چی دوست دارم") ||
+                command.contains("what do i like") -> respond(interestSummary())
             command.contains("clear memory") || command.contains("پاک کردن حافظه") || command.contains("حافظه را پاک کن") -> clearMemory()
             command.contains("privacy mode") || command.contains("حالت حریم خصوصی") -> setPrivacyMode(!command.contains("off") && !command.contains("خاموش"))
             command.contains("guest mode") || command.contains("حالت مهمان") -> setGuestMode(!command.contains("off") && !command.contains("خاموش"))
             command.contains("clock code") || command.contains("کد ساعت") -> exportClockCode()
             command.contains("clear cache") || (command.contains("پاک") && command.contains("کش")) -> openStorageSettings()
-            command.contains("settings") || command.contains("تنظیمات") -> openSettings()
             command.contains("help") || command.contains("راهنما") -> respond(getString(R.string.assistant_help))
             else -> {
                 val localReply = localConversation(rawCommand)
@@ -316,6 +356,20 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val cleanQuestion = question.trim()
         if (cleanQuestion.isBlank()) {
             respond(getString(R.string.assistant_help))
+            return
+        }
+        recordLearning("web", cleanQuestion.take(80))
+        val connectivity = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        val hasInternet = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            val network = connectivity?.activeNetwork
+            val capabilities = network?.let { connectivity.getNetworkCapabilities(it) }
+            capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+        } else {
+            @Suppress("DEPRECATION")
+            connectivity?.activeNetworkInfo?.isConnectedOrConnecting == true
+        }
+        if (!hasInternet) {
+            respond(getString(R.string.assistant_internet_required))
             return
         }
         binding.bubble.setState(AssistantBubbleView.State.THINKING)
@@ -342,7 +396,41 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             withContext(Dispatchers.Main) {
                 binding.bubble.setState(AssistantBubbleView.State.READY)
                 if (answer != null) respond(answer)
-                else respond("پاسخ فوری پیدا نشد. سام می‌تواند همین موضوع را در مرورگر باز کند.")
+                else respond(getString(R.string.assistant_web_answer_unavailable))
+            }
+        }
+    }
+
+    private fun showWorldNews() {
+        val connectivity = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        val newsNetworkAvailable = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            connectivity?.activeNetwork != null
+        } else {
+            @Suppress("DEPRECATION")
+            connectivity?.activeNetworkInfo?.isConnectedOrConnecting == true
+        }
+        if (!newsNetworkAvailable) {
+            respond(getString(R.string.assistant_internet_required))
+            return
+        }
+        respond("سام در حال جمع‌کردن خبرهای مهم جهان است…", speak = false)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val headlines = runCatching {
+                val connection = (URL("https://news.google.com/rss?hl=fa&gl=IR&ceid=IR:fa").openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 5_000
+                    readTimeout = 7_000
+                }
+                val xml = connection.inputStream.bufferedReader().use { it.readText() }
+                connection.disconnect()
+                Regex("<item>[\\s\\S]*?<title>(.*?)</title>").findAll(xml)
+                    .map { it.groupValues[1].replace("&amp;", "&").replace("&quot;", "\"").trim() }
+                    .filter { it.isNotBlank() }
+                    .take(5)
+                    .toList()
+            }.getOrDefault(emptyList())
+            withContext(Dispatchers.Main) {
+                if (headlines.isEmpty()) respond(getString(R.string.assistant_web_answer_unavailable))
+                else respond("مهم‌ترین خبرهای تازه:\n" + headlines.mapIndexed { i, title -> "${i + 1}. $title" }.joinToString("\n"))
             }
         }
     }
@@ -351,11 +439,21 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val command = rawCommand.trim().lowercase(Locale.ROOT)
         return when {
             command.matches(Regex("(سلام|درود|hello|hi|hey).*")) ->
-                "سلام! من سام هستم. بدون اتصال Gemini هم می‌توانم برنامه‌ها را باز کنم، وضعیت گوشی را بگویم و حالت‌های دستگاه را مدیریت کنم."
+                "سلام! خوش آمدی. من سام هستم؛ هر کاری خواستی بگو—مثلاً برنامه‌ای باز کنم، تماس بگیرم، پیام بفرستم، تلگرام را باز کنم، باتری و حافظه را بررسی کنم یا فقط با هم صحبت کنیم."
             command.contains("اسمت چیه") || command.contains("کی هستی") || command.contains("who are you") ->
                 "من سام، دستیار محلی Sam Launcher هستم؛ برای کارهای روزمره اول خود گوشی را بررسی می‌کنم."
             command.contains("خوبی") || command.contains("how are you") ->
                 "آماده‌ام کمک کنم. یک فرمان کوتاه مثل «باتری»، «تنظیمات» یا «باز کن دوربین» بگو."
+            command.contains("چه خبر") || command.contains("خبرها") ->
+                "من خبرهای لحظه‌ای را فقط با اینترنت می‌توانم بررسی کنم. بگو «چه خبر از ...» تا خودم در وب جست‌وجو کنم."
+            command.contains("حوصله ندارم") || command.contains("خسته ام") || command.contains("خسته‌ام") ->
+                "می‌فهمم. اگر دوست داری با هم یک کار ساده انجام بدهیم؛ مثلاً موسیقی را باز کنم، وضعیت گوشی را بگویم یا فقط با هم صحبت کنیم."
+            command.contains("کمک میخوام") || command.contains("کمک می‌خوام") || command == "کمک" ->
+                "حتماً. من می‌توانم برنامه‌ها را باز کنم، باتری و حافظه را بررسی کنم، کش سام را پاک کنم، تنظیمات را باز کنم یا دربارهٔ موضوعات مختلف در وب جست‌وجو کنم."
+            command.contains("دوستت دارم") || command.contains("عاشقتم") ->
+                "لطف داری. من هم اینجا هستم تا کارهایت را ساده‌تر کنم."
+            command.contains("صبح بخیر") || command.contains("شب بخیر") ->
+                "ممنون؛ امیدوارم روز یا شبت آرام و خوب پیش برود."
             command.contains("ممنون") || command.contains("مرسی") || command.contains("thank") ->
                 "خواهش می‌کنم؛ هر وقت خواستی در خدمتم."
             command.contains("چه کارهایی") || command.contains("قابلیت") || command.contains("what can you do") ->
@@ -380,7 +478,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             respond(getString(R.string.assistant_app_not_found, query))
         } else {
             runCatching { startActivity(launchIntent) }
-                .onSuccess { respond(getString(R.string.assistant_opening, match.loadLabel(packageManager))) }
+                .onSuccess {
+                    recordLearning("app", match.loadLabel(packageManager).toString())
+                    respond(getString(R.string.assistant_opening, match.loadLabel(packageManager)))
+                }
                 .onFailure { respond("باز کردن ${match.loadLabel(packageManager)} ممکن نشد؛ برنامه را از فهرست لانچر امتحان کن.") }
         }
     }
@@ -396,6 +497,65 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             .trim()
     }
 
+    private fun requestLatestSms() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
+            readLatestSms()
+        } else {
+            smsPermission.launch(Manifest.permission.READ_SMS)
+        }
+    }
+
+    private fun readLatestSms() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                contentResolver.query(
+                    Telephony.Sms.Inbox.CONTENT_URI,
+                    arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE),
+                    null,
+                    null,
+                    "${Telephony.Sms.DATE} DESC"
+                )?.use { cursor ->
+                    if (!cursor.moveToFirst()) return@use null
+                    val address = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS))
+                    val body = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.BODY))
+                    address to body
+                }
+            }.getOrNull()
+            withContext(Dispatchers.Main) {
+                if (result == null) respond("پیامکی در صندوق ورودی پیدا نشد.")
+                else respond("آخرین پیام از شمارهٔ ${result.first} است: ${result.second.take(240)}")
+            }
+        }
+    }
+
+    private fun learnInteraction(rawCommand: String) {
+        if (!privacyGuard.canPersistPersonalMemory()) return
+        val query = rawCommand.trim().replace(Regex("\\s+"), " ").take(80)
+        if (query.isBlank()) return
+        incrementLearning("conversation", query)
+    }
+
+    private fun recordLearning(category: String, value: String) {
+        if (privacyGuard.canPersistPersonalMemory() && value.isNotBlank()) incrementLearning(category, value)
+    }
+
+    private fun incrementLearning(category: String, value: String) {
+        val key = "${category}_${value.trim().lowercase(Locale.ROOT)}"
+        val count = learningPreferences.getInt(key, 0) + 1
+        learningPreferences.edit().putInt(key, count).apply()
+    }
+
+    private fun interestSummary(): String {
+        if (!privacyGuard.canPersistPersonalMemory()) return "حالت حریم خصوصی فعال است؛ سام چیزی از علایق شما ذخیره نمی‌کند."
+        val entries = learningPreferences.all
+            .filterKeys { it.startsWith("app_") || it.startsWith("web_") }
+            .map { (key, value) -> key.substringAfter('_') to (value as? Int ?: 0) }
+            .sortedByDescending { it.second }
+            .take(5)
+        return if (entries.isEmpty()) "هنوز دادهٔ کافی ندارم؛ برنامه‌هایی که باز می‌کنی و موضوعاتی که جست‌وجو می‌کنی را فقط روی همین گوشی یاد می‌گیرم."
+        else "بر اساس استفادهٔ محلی شما، موضوعات/برنامه‌های پرتکرار: ${entries.joinToString("، ") { "${it.first} (${it.second} بار)" }}."
+    }
+
     private fun prepareCall(rawCommand: String) {
         val number = Regex("[+]?[-\\d() ]{7,}").find(rawCommand)?.value?.trim()
         if (number == null) {
@@ -407,6 +567,16 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             startActivity(intent)
             respond("شماره‌گیر برای $number باز شد؛ تماس نهایی با تأیید تو انجام می‌شود.")
         } else respond("شماره‌گیر روی این گوشی پیدا نشد.")
+    }
+
+    private fun openSystemAssistant() {
+        val assistantIntent = Intent(Intent.ACTION_ASSIST)
+        if (assistantIntent.resolveActivity(packageManager) != null) {
+            startActivity(assistantIntent)
+            respond("دستیارهای موجود گوشی را باز کردم؛ می‌توانی یکی را انتخاب کنی. سام بدون دسترسی رسمی نمی‌تواند پاسخ داخلی برنامه‌های دیگر را مخفیانه جمع کند.")
+        } else {
+            respond("دستیار دیگری روی گوشی ثبت نشده است؛ سام و جست‌وجوی وب همچنان فعال هستند.")
+        }
     }
 
     private fun prepareSms(rawCommand: String) {
@@ -440,6 +610,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun searchWeb(query: String) {
         if (query.isBlank()) { respond(getString(R.string.assistant_help)); return }
+        recordLearning("web", query.take(80))
         val searchIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=${Uri.encode(query)}"))
         if (searchIntent.resolveActivity(packageManager) == null) { respond(getString(R.string.assistant_browser_unavailable)); return }
         startActivity(searchIntent)
@@ -451,6 +622,34 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val storageIntent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
         if (storageIntent.resolveActivity(packageManager) != null) startActivity(storageIntent)
         respond(getString(R.string.assistant_cache_guidance))
+    }
+
+    private fun storageSummary(): String {
+        val stat = StatFs(filesDir.absolutePath)
+        val total = stat.totalBytes / (1024 * 1024 * 1024)
+        val free = stat.availableBytes / (1024 * 1024 * 1024)
+        val used = (total - free).coerceAtLeast(0)
+        return "وضعیت حافظه گوشی: ${used} گیگابایت استفاده‌شده از ${total} گیگابایت؛ ${free} گیگابایت آزاد است."
+    }
+
+    private fun runDiagnostics(): String {
+        val cacheBytes = cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        val cacheMb = cacheBytes / (1024 * 1024)
+        val packageCount = runCatching {
+            packageManager.queryIntentActivities(
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
+                PackageManager.MATCH_DEFAULT_ONLY
+            ).distinctBy { it.activityInfo.packageName }.size
+        }.getOrDefault(0)
+        val problems = mutableListOf<String>()
+        if (batteryLevel in 0..15) problems += "باتری کم"
+        if (packageCount == 0) problems += "فهرست برنامه‌ها خالی است"
+        if (cacheMb > 100) problems += "کش سام بزرگ است"
+        return if (problems.isEmpty()) {
+            "عیب‌یابی سام انجام شد: برنامه سالم است؛ $packageCount برنامه قابل اجرا، باتری ${batteryLevel}٪ و کش ${cacheMb} مگابایت."
+        } else {
+            "عیب‌یابی سام: ${problems.joinToString("، ")}. برنامه‌های قابل اجرا: $packageCount؛ کش سام: ${cacheMb} مگابایت."
+        }
     }
 
     private fun openSettings() {

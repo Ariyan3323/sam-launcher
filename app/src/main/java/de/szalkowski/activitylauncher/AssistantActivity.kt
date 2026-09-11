@@ -313,7 +313,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("حافظه گوشی") || command.contains("حافظه دستگاه") ||
                 command.contains("storage") || command.contains("memory status") -> respond(storageSummary())
             command.contains("اختلال") || command.contains("عیب یابی") || command.contains("عیب‌یابی") ||
-                command.contains("diagnostic") || command.contains("check sam") -> respond(runDiagnostics())
+                command.contains("عیبیابی") || command.contains("diagnostic") || command.contains("check sam") -> runDiagnostics()
             command.startsWith("open ") -> openApp(rawCommand.removePrefixIgnoreCase("open ").trim())
             command.startsWith("باز کن ") -> openApp(rawCommand.removePrefix("باز کن ").trim())
             command.contains("پیدا کن") || command.contains("یافتن برنامه") ||
@@ -680,23 +680,33 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         return "وضعیت حافظه گوشی: ${used} گیگابایت استفاده‌شده از ${total} گیگابایت؛ ${free} گیگابایت آزاد است."
     }
 
-    private fun runDiagnostics(): String {
-        val cacheBytes = cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
-        val cacheMb = cacheBytes / (1024 * 1024)
-        val packageCount = runCatching {
-            packageManager.queryIntentActivities(
-                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
-                PackageManager.MATCH_DEFAULT_ONLY
-            ).distinctBy { it.activityInfo.packageName }.size
-        }.getOrDefault(0)
-        val problems = mutableListOf<String>()
-        if (batteryLevel in 0..15) problems += "باتری کم"
-        if (packageCount == 0) problems += "فهرست برنامه‌ها خالی است"
-        if (cacheMb > 100) problems += "کش سام بزرگ است"
-        return if (problems.isEmpty()) {
-            "عیب‌یابی سام انجام شد: برنامه سالم است؛ $packageCount برنامه قابل اجرا، باتری ${batteryLevel}٪ و کش ${cacheMb} مگابایت."
-        } else {
-            "عیب‌یابی سام: ${problems.joinToString("، ")}. برنامه‌های قابل اجرا: $packageCount؛ کش سام: ${cacheMb} مگابایت."
+    private fun runDiagnostics() {
+        binding.bubble.setState(AssistantBubbleView.State.THINKING)
+        respond("در حال بررسی وضعیت سام…", speak = false)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val cacheBytes = runCatching {
+                cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            }.getOrDefault(0L)
+            val cacheMb = cacheBytes / (1024 * 1024)
+            val packageCount = runCatching {
+                packageManager.queryIntentActivities(
+                    Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
+                    PackageManager.MATCH_DEFAULT_ONLY
+                ).distinctBy { it.activityInfo.packageName }.size
+            }.getOrDefault(0)
+            val problems = mutableListOf<String>()
+            if (batteryLevel in 0..15) problems += "باتری کم"
+            if (packageCount == 0) problems += "فهرست برنامه‌ها خالی است"
+            if (cacheMb > 100) problems += "کش سام بزرگ است"
+            val report = if (problems.isEmpty()) {
+                "عیب‌یابی سام انجام شد: برنامه سالم است؛ $packageCount برنامه قابل اجرا، باتری ${batteryLevel}٪ و کش $cacheMb مگابایت."
+            } else {
+                "عیب‌یابی سام: ${problems.joinToString("، ")}. برنامه‌های قابل اجرا: $packageCount؛ کش سام: $cacheMb مگابایت."
+            }
+            withContext(Dispatchers.Main) {
+                binding.bubble.setState(AssistantBubbleView.State.READY)
+                respond(report)
+            }
         }
     }
 

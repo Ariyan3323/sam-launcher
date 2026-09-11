@@ -650,10 +650,26 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun openStorageSettings() {
-        cacheDir.deleteRecursively(); externalCacheDir?.deleteRecursively()
-        val storageIntent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
-        if (storageIntent.resolveActivity(packageManager) != null) startActivity(storageIntent)
-        respond(getString(R.string.assistant_cache_guidance))
+        lifecycleScope.launch(Dispatchers.IO) {
+            val cacheCleared = runCatching {
+                cacheDir.deleteRecursively()
+                externalCacheDir?.deleteRecursively()
+                true
+            }.getOrDefault(false)
+            withContext(Dispatchers.Main) {
+                val storageIntent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
+                val fallbackIntent = Intent(Settings.ACTION_SETTINGS)
+                when {
+                    storageIntent.resolveActivity(packageManager) != null -> startActivity(storageIntent)
+                    fallbackIntent.resolveActivity(packageManager) != null -> startActivity(fallbackIntent)
+                }
+                if (cacheCleared) {
+                    respond(getString(R.string.assistant_cache_guidance))
+                } else {
+                    respond("پاک‌سازی کش سام کامل نشد؛ تنظیمات حافظه باز شد تا آن را بررسی کنید.")
+                }
+            }
+        }
     }
 
     private fun storageSummary(): String {

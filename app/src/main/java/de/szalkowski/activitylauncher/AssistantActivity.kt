@@ -24,6 +24,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.activity.viewModels
 import androidx.preference.PreferenceManager
 import de.szalkowski.activitylauncher.agent.AgentConfig
 import de.szalkowski.activitylauncher.agent.AgentOutput
@@ -38,6 +41,7 @@ import de.szalkowski.activitylauncher.agent.ConversationCore
 import de.szalkowski.activitylauncher.agent.OfflineKnowledgeStore
 import de.szalkowski.activitylauncher.agent.SamAgentEngine
 import de.szalkowski.activitylauncher.agent.EngineResponse
+import de.szalkowski.activitylauncher.agent.CaregiverConversationViewModel
 import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import de.szalkowski.activitylauncher.services.LastNotificationCache
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +69,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var conversationCore: ConversationCore
     private lateinit var offlineKnowledge: OfflineKnowledgeStore
     private lateinit var knowledgeEngine: SamAgentEngine
+    private val caregiverViewModel: CaregiverConversationViewModel by viewModels()
     private var speakResponses = true
     private var pendingBankOnly = false
     private var configuredAiProvider = ""
@@ -112,6 +117,15 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
         binding = ActivityAssistantBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                caregiverViewModel.messages.collect { messages ->
+                    messages.lastOrNull()?.let { message ->
+                        binding.response.text = message.content
+                    }
+                }
+            }
+        }
         textToSpeech = TextToSpeech(this, this)
         textToSpeech.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {
@@ -276,6 +290,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun runCommand(rawCommand: String) {
         binding.command.setText(rawCommand)
+        caregiverViewModel.saveUserMessage(rawCommand)
         learnInteraction(rawCommand)
         val selectedMode = SecureAiSettings(this).getMode()
         if (IntentRouter.route(rawCommand).type == SamIntentType.READ_LATEST_NOTIFICATION) {
@@ -1113,6 +1128,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun respond(message: String, speak: Boolean = speakResponses) {
         binding.response.text = message
+        caregiverViewModel.saveAssistantMessage(message)
         if (speak && ::textToSpeech.isInitialized && message.isNotBlank()) {
             binding.voiceStatus.setText(R.string.assistant_voice_speaking)
             textToSpeech.speak(message, TextToSpeech.QUEUE_FLUSH, null, "raad-response")

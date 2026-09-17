@@ -22,10 +22,10 @@ Artifact:
 app/build/outputs/apk/oss/debug/app-oss-debug.apk
 ```
 
-Stable application ID:
+Canonical application ID:
 
 ```text
-com.ariyan3323.samlauncher.install
+com.fgmembers.samlauncher
 ```
 
 ## Implemented areas

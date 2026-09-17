@@ -1,10 +1,10 @@
 # Sam Launcher signing and upgrade compatibility
 
-The installable OSS APK uses the stable application ID `com.ariyan3323.samlauncher.install`. Do not change this ID for ordinary updates.
+The installable OSS APK uses the canonical application ID `com.fgmembers.samlauncher`. Do not change this ID for ordinary updates.
 
 Android permits an APK to replace an installed app only when both the application ID and signing certificate match. The private release keystore must never be committed to this repository, pasted into chat, or embedded in the APK.
 
-For local debug builds, use the same Android debug keystore on the machine that installs successive builds. For distributable release builds, provide the same private keystore through environment variables:
+For local debug builds, Gradle is explicitly configured to use `~/.android/debug.keystore` with alias `androiddebugkey` and the standard debug credentials. Use the same keystore on the machine that installs successive builds. For distributable release builds, provide the same private keystore through environment variables:
 
 ```bash
 export KEYSTORE=/secure/path/sam-release.jks

@@ -11,8 +11,8 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // Stable package name for local/debug installs.
-        applicationId = System.getenv("APPID") ?: "com.ariyan3323.samlauncher.install"
+        // Canonical package name for the unified Sam Launcher application.
+        applicationId = "com.fgmembers.samlauncher"
         minSdk = 21
         targetSdk = 36
         versionCode = 66
@@ -43,6 +43,12 @@ android {
     }
 
     signingConfigs {
+        create("stableDebug") {
+            storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         create("release") {
             storeFile = file(System.getenv("KEYSTORE") ?: "keystore.jks")
             storePassword = System.getenv("KEYSTORE_PASSWORD")
@@ -51,6 +57,9 @@ android {
         }
     }
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("stableDebug")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

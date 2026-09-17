@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">Girêdana çalakiyê ya ne derbasdar hat dayîn</string>
     <string name="warning_root_check">Hişyarî: Destûrên root belkî li ser vê cîhazê peyda nabin.</string>
     <string name="exception_invalid_component_name">Navê pêkhateyekî ne derbasdar an potansiyel zerardar: %s</string>
-    <string name="exception_command_error">Ferman bi koda çewtiyê vegeriya: %d, derketin: %s</string>
+    <string name="exception_command_error">Ferman bi koda çewtiyê vegeriya: %1$d, derketin: %2$s</string>
     <string name="category_title_about">Derheqê</string>
     <string name="action_view_source">Koda çavkaniyê bibîne</string>
     <string name="summary_action_view_source">Koda çavkaniyê ya vê Sepanê ji bo xwendin û guherandinê li ser GitHub peyda dibe. Hûn bi xêr hatin ku hûn ji bo baştirkirin û sererastkirina xeletiyan daxwazên kişandinê ji me re bişînin.</string>

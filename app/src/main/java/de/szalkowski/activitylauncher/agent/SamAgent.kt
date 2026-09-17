@@ -12,6 +12,7 @@ import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Calendar
 import java.util.Locale
 
 // ══════════════════════════════════════════════════════════════
@@ -20,16 +21,20 @@ import java.util.Locale
 data class AgentConfig(
     val name: String = "رعد",
     val personality: String = """
-        تو "$name" هستی، یک دستیار هوشمند، چابک و کمی شوخ‌طبع در لانچر اندروید.
+        تو "$name" هستی، یک دستیار باهوش، زیرک، آرام و انسان‌فهم در لانچر اندروید.
         ویژگی‌های تو:
-        - پاسخ‌هایت کوتاه، مفید و به فارسی روان باشد (حداکثر ۲ جمله).
-        - اگر کاربر عجله دارد، مستقیم برو سر اصل مطلب.
-        - گاهی با یک شوخی کوچک یا استیکر متنی (مثل ⚡، 🚀) پاسخ بده.
-        - اگر کاری را نمی‌توانی انجام دهی، صادقانه بگو و پیشنهاد جایگزین بده.
-        - وضعیت فعلی دستگاه را در نظر بگیر (باتری، ساعت).
+        - مثل یک انسان مؤدب و فهمیده گفتگو کن؛ منظور ضمنی، لحن و احساس کاربر را درک کن.
+        - پاسخ‌هایت طبیعی، روشن و متناسب با سؤال باشد؛ نه رباتیک و نه بیش از حد طولانی.
+        - در موضوعات حساس، سیاست‌مدار و بی‌طرف باش؛ اول واقعیت، بعد گزینه‌ها و پیامدها را بگو.
+        - اگر مطمئن نیستی، حدس قطعی نزن؛ بگو چه چیزی را می‌دانی و برای اطلاعات روز از ابزار وب استفاده کن.
+        - اگر کاری را نمی‌توانی انجام دهی، صادقانه بگو و یک راه جایگزین عملی پیشنهاد بده.
+        - وضعیت فعلی دستگاه و حافظه محلی کاربر را فقط در حد لازم و با رعایت حریم خصوصی در نظر بگیر.
     """.trimIndent(),
     val geminiApiKey: String = "YOUR_GEMINI_API_KEY_HERE",
-    val model: String = "gemini-2.0-flash",
+    val openAiApiKey: String = "",
+    val model: String = "gemini-3.6-flash",
+    val provider: String = "gemini",
+    val openAiBaseUrl: String = "https://api.openai.com/v1",
     val maxMemoryTurns: Int = 10
 )
 
@@ -66,6 +71,10 @@ class ToolRegistry {
         tools[tool.name] = tool
     }
 
+    fun registerSkill(skill: AgentSkill) {
+        skill.tools().forEach(::register)
+    }
+
     fun getTool(name: String): Tool? = tools[name]
 
     fun toGeminiSchema(): JSONArray {
@@ -97,6 +106,41 @@ class ToolRegistry {
     suspend fun executeTool(name: String, args: JSONObject): ToolResult? {
         return tools[name]?.execute(args)
     }
+}
+
+interface AgentSkill {
+    val id: String
+    val description: String
+    fun tools(): List<Tool>
+}
+
+class CoreSkill(private val context: Context) : AgentSkill {
+    override val id = "core"
+    override val description = "برنامه‌ها، جستجو، دستگاه و تنظیمات"
+    override fun tools() = listOf<Tool>(
+        OpenAppTool(context), SearchWebTool(context), BatteryTool(context),
+        DeviceSummaryTool(context), ListAppsTool(context), FlashlightTool(context),
+        SettingsTool(context), SemanticAppSearchTool(context)
+    )
+}
+
+class CommunicationSkill(private val context: Context) : AgentSkill {
+    override val id = "communication"
+    override val description = "تماس، پیامک، صندوق صوتی و ایمیل"
+    override fun tools() = listOf<Tool>(
+        PhoneCallTool(context), SmsInboxTool(context), SmsComposeTool(context),
+        CallLogTool(context), VoicemailTool(context), EmailComposeTool(context)
+    )
+}
+
+class PersonalizationSkill(private val context: Context) : AgentSkill {
+    override val id = "personalization"
+    override val description = "حالت‌ها، داشبورد، حافظه و حریم خصوصی"
+    override fun tools() = listOf<Tool>(
+        ActivateModeTool(context), DailyDashboardTool(context),
+        RememberFactTool(context), ShowMemoryTool(context), ClearMemoryTool(context),
+        PrivacyModeTool(context)
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -142,14 +186,16 @@ data class ToolCall(val name: String, val args: JSONObject)
 data class AgentResponse(
     val text: String,
     val needsToolCall: Boolean,
-    val toolCall: ToolCall? = null
+    val toolCall: ToolCall? = null,
+    val successful: Boolean = true
 )
 
 data class AgentOutput(
     val reply: String,
     val executedTools: List<String> = emptyList(),
     val responseTimeMs: Long = 0,
-    val success: Boolean
+    val success: Boolean,
+    val workflowSteps: List<String> = emptyList()
 )
 
 // ═══════════════════════════════════════════════════════════════
@@ -165,6 +211,9 @@ class LlmClient(private val config: AgentConfig) {
     ): AgentResponse = withContext(Dispatchers.IO) {
 
         memory.addUser(userMessage)
+        if (config.provider == "openai" || config.provider == "custom") {
+            return@withContext openAiChat(userMessage, memory, contextInfo)
+        }
         val contents = JSONArray()
 
         contents.put(JSONObject().apply {
@@ -204,6 +253,8 @@ class LlmClient(private val config: AgentConfig) {
         val conn = url.openConnection() as HttpURLConnection
         conn.requestMethod = "POST"
         conn.setRequestProperty("Content-Type", "application/json")
+        conn.connectTimeout = 7_000
+        conn.readTimeout = 12_000
         conn.doOutput = true
 
         OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
@@ -216,11 +267,85 @@ class LlmClient(private val config: AgentConfig) {
         }
 
         conn.disconnect()
-        return@withContext parseResponse(responseBody, responseCode == 200)
+        val geminiResponse = parseResponse(responseBody, responseCode == 200)
+        if (geminiResponse.successful || config.openAiApiKey.isBlank()) return@withContext geminiResponse
+        return@withContext openAiChat(userMessage, memory, contextInfo)
+    }
+
+    private fun openAiChat(userMessage: String, memory: AgentMemory, contextInfo: String): AgentResponse {
+        return runCatching {
+            val messages = JSONArray().apply {
+                put(JSONObject().apply {
+                    put("role", "system")
+                    put("content", "${config.personality}\n\nوضعیت دستگاه: $contextInfo")
+                })
+                memory.getHistory().forEach { message ->
+                    put(JSONObject().apply {
+                        put("role", if (message.role == "model") "assistant" else message.role)
+                        put("content", message.content)
+                    })
+                }
+            }
+            val body = JSONObject().apply {
+                put("model", config.model)
+                put("messages", messages)
+                put("temperature", 0.7)
+                put("max_tokens", 512)
+            }
+            val conn = (URL("${config.openAiBaseUrl.trimEnd('/')}/chat/completions").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("Authorization", "Bearer ${config.openAiApiKey}")
+                connectTimeout = 7_000
+                readTimeout = 12_000
+                doOutput = true
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+            val code = conn.responseCode
+            val responseStream = if (code == 200) conn.inputStream else conn.errorStream
+            val responseBody = responseStream?.bufferedReader()?.readText().orEmpty()
+            conn.disconnect()
+            if (code != 200) {
+                val detail = runCatching { JSONObject(responseBody).optJSONObject("error")?.optString("message") }.getOrNull().orEmpty()
+                val friendly = when {
+                    code == 401 -> "کلید OpenAI معتبر نیست یا دسترسی آن لغو شده است."
+                    code == 403 -> "دسترسی پروژهٔ OpenAI به این مدل مجاز نیست."
+                    code == 404 -> "مدل یا آدرس API پیدا نشد؛ نام مدل و Base URL را بررسی کن."
+                    code == 429 -> "سهمیه یا اعتبار API تمام شده است؛ وضعیت Billing پروژهٔ OpenAI را بررسی کن."
+                    detail.isNotBlank() -> "OpenAI خطا داد: ${detail.take(180)}"
+                    else -> "OpenAI با کد خطای $code پاسخ داد."
+                }
+                return@runCatching AgentResponse(text = friendly, needsToolCall = false, successful = false)
+            }
+            val text = JSONObject(responseBody).optJSONArray("choices")
+                ?.optJSONObject(0)?.optJSONObject("message")?.optString("content").orEmpty()
+            AgentResponse(text = text.ifBlank { "پاسخی دریافت نشد." }, needsToolCall = false)
+        }.getOrElse { error ->
+            AgentResponse("خطای شبکهٔ Gemini: ${error.message?.take(140) ?: "اتصال برقرار نشد"}", false, successful = false)
+        }
     }
 
     private fun parseResponse(body: String, success: Boolean): AgentResponse {
-        if (!success) return AgentResponse(text = "خطا در ارتباط با سرور: $body", needsToolCall = false)
+        if (!success) {
+            val friendly = runCatching {
+                val error = JSONObject(body).optJSONObject("error")
+                val status = error?.optString("status").orEmpty()
+                val message = error?.optString("message").orEmpty()
+                when {
+                    status == "RESOURCE_EXHAUSTED" || message.contains("high demand", ignoreCase = true) || message.contains("quota", ignoreCase = true) ->
+                        "Gemini موقتاً شلوغ است یا سهمیهٔ آن تمام شده؛ چند دقیقه بعد دوباره تلاش کن."
+                    status == "UNAUTHENTICATED" || message.contains("API key", ignoreCase = true) || message.contains("invalid", ignoreCase = true) ->
+                        "کلید Gemini معتبر نیست یا برای این پروژه فعال نشده است؛ کلید را بررسی یا تعویض کن."
+                    status == "NOT_FOUND" || message.contains("not found", ignoreCase = true) ->
+                        "مدل Gemini پیدا نشد؛ نام مدل را روی gemini-2.5-flash بگذار."
+                    message.contains("location is not supported", ignoreCase = true) ->
+                        "Gemini در منطقه فعلی در دسترس نیست؛ سام به حالت محلی برگشت."
+                    message.isNotBlank() -> "ارتباط با Gemini برقرار نشد: ${message.take(180)}"
+                    else -> "ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است."
+                }
+            }.getOrDefault("ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است.")
+            return AgentResponse(text = friendly, needsToolCall = false, successful = false)
+        }
 
         return try {
             val json = JSONObject(body)
@@ -250,7 +375,7 @@ class LlmClient(private val config: AgentConfig) {
 
             AgentResponse(text = textResponse, needsToolCall = toolCall != null, toolCall = toolCall)
         } catch (e: Exception) {
-            AgentResponse(text = "خطا در پردازش پاسخ: ${e.message}", needsToolCall = false)
+            AgentResponse(text = "خطا در پردازش پاسخ؛ حالت محلی سام فعال است.", needsToolCall = false, successful = false)
         }
     }
 }
@@ -270,14 +395,53 @@ class SamAgent(
     init { registerDefaultTools() }
 
     private fun registerDefaultTools() {
-        toolRegistry.register(OpenAppTool(context))
-        toolRegistry.register(SearchWebTool())
-        toolRegistry.register(BatteryTool(context))
-        toolRegistry.register(FlashlightTool(context))
-        toolRegistry.register(SettingsTool(context))
+        listOf(
+            CoreSkill(context),
+            CommunicationSkill(context),
+            PersonalizationSkill(context)
+        ).forEach(toolRegistry::registerSkill)
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {
+        val steps = splitWorkflow(userInput)
+        return if (steps.size > 1) processWorkflow(steps, deviceContext) else processSingleCommand(userInput, deviceContext)
+    }
+
+    private suspend fun processWorkflow(steps: List<String>, deviceContext: String): AgentOutput {
+        val startTime = System.currentTimeMillis()
+        val executedTools = mutableListOf<String>()
+        val stepReports = mutableListOf<String>()
+        var allSuccessful = true
+
+        for ((index, step) in steps.withIndex()) {
+            val output = processSingleCommand(step, deviceContext)
+            executedTools += output.executedTools
+            val report = if (output.success) {
+                "${index + 1}. $step → ${output.reply}"
+            } else {
+                "${index + 1}. $step → خطا: ${output.reply}"
+            }
+            stepReports += report
+            if (!output.success) {
+                allSuccessful = false
+                break
+            }
+        }
+
+        val summary = if (allSuccessful) "همهٔ ${stepReports.size} مرحله با موفقیت انجام شد."
+        else "زنجیره در مرحلهٔ ${stepReports.size} متوقف شد."
+        return AgentOutput(
+            reply = "$summary\n${stepReports.joinToString("\n")}",
+            executedTools = executedTools.distinct(),
+            responseTimeMs = System.currentTimeMillis() - startTime,
+            success = allSuccessful,
+            workflowSteps = stepReports
+        )
+    }
+
+    private fun splitWorkflow(input: String): List<String> = WorkflowParser.parse(input)
+
+    private suspend fun processSingleCommand(userInput: String, deviceContext: String): AgentOutput {
         val startTime = System.currentTimeMillis()
 
         try {
@@ -293,6 +457,15 @@ class SamAgent(
                     contextInfo = deviceContext
                 )
 
+                if (!response.successful) {
+                    return AgentOutput(
+                        reply = response.text,
+                        executedTools = executedTools.distinct(),
+                        responseTimeMs = System.currentTimeMillis() - startTime,
+                        success = false
+                    )
+                }
+
                 if (!response.needsToolCall) {
                     finalText = response.text
                     memory.addModel(finalText)
@@ -304,10 +477,22 @@ class SamAgent(
 
                 if (toolResult != null) {
                     executedTools.add(toolCall.name)
+                    if (!toolResult.success) {
+                        return AgentOutput(
+                            reply = toolResult.message,
+                            executedTools = executedTools.distinct(),
+                            responseTimeMs = System.currentTimeMillis() - startTime,
+                            success = false
+                        )
+                    }
                     currentInput = "[نتیجه اجرای ابزار ${toolCall.name}]: ${toolResult.message}"
                 } else {
-                    finalText = "ابزار ${toolCall.name} پیدا نشد."
-                    break
+                    return AgentOutput(
+                        reply = "ابزار ${toolCall.name} پیدا نشد.",
+                        executedTools = executedTools.distinct(),
+                        responseTimeMs = System.currentTimeMillis() - startTime,
+                        success = false
+                    )
                 }
 
                 if (iteration == maxToolIterations) {
@@ -341,31 +526,48 @@ class OpenAppTool(private val context: Context) : Tool {
 
     override suspend fun execute(args: JSONObject): ToolResult {
         val appName = args.getString("app_name").lowercase(Locale.getDefault())
+        val privacyGuard = PrivacyGuard(context)
+        if (!privacyGuard.canOpenApp(appName)) return ToolResult(false, "حالت مهمان اجازه باز کردن این برنامه را نمی‌دهد.")
         val pm = context.packageManager
         val apps = pm.getInstalledApplications(PackageManager.MATCH_ALL)
-        val match = apps.firstOrNull {
+        val directMatch = apps.firstOrNull {
             it.loadLabel(pm).toString().lowercase(Locale.getDefault()).contains(appName)
         }
+        val match = directMatch ?: SemanticAppSearch.findMatches(context, appName, 1).firstOrNull()
         val intent = match?.let { pm.getLaunchIntentForPackage(it.packageName) }
         return if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-            ToolResult(true, "برنامه ${match.loadLabel(pm)} باز شد.")
+            runCatching {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }.fold(
+                onSuccess = { ToolResult(true, "برنامه ${match.loadLabel(pm)} باز شد.") },
+                onFailure = { ToolResult(false, "باز کردن ${match.loadLabel(pm)} ممکن نشد.") }
+            )
         } else {
             ToolResult(false, "برنامه '$appName' پیدا نشد.")
         }
     }
 }
 
-class SearchWebTool : Tool {
+class SearchWebTool(private val context: Context) : Tool {
     override val name = "search_web"
     override val description = "جستجو در گوگل"
     override val parameters = listOf(ParamSchema("query", "string", "عبارت جستجو", true))
 
     override suspend fun execute(args: JSONObject): ToolResult {
         val query = args.getString("query")
-        val url = "https://www.google.com/search?q=${java.net.URLEncoder.encode(query, "UTF-8")}"
-        return ToolResult(true, "جستجو برای: $query", url)
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            android.net.Uri.parse("https://www.google.com/search?q=${android.net.Uri.encode(query)}")
+        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        if (intent.resolveActivity(context.packageManager) == null) {
+            return ToolResult(false, "مرورگری برای انجام این جست‌وجو در دسترس نیست.")
+        }
+        return runCatching { context.startActivity(intent) }
+            .fold(
+                onSuccess = { ToolResult(true, "جستجو برای: $query") },
+                onFailure = { ToolResult(false, "باز کردن مرورگر ممکن نشد.") }
+            )
     }
 }
 
@@ -381,12 +583,52 @@ class BatteryTool(private val context: Context) : Tool {
     }
 }
 
+class DeviceSummaryTool(private val context: Context) : Tool {
+    override val name = "device_summary"
+    override val description = "ارائهٔ خلاصهٔ وضعیت دستگاه شامل باتری، ساعت، نسخهٔ اندروید و تعداد برنامه‌ها"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val now = Calendar.getInstance()
+        val time = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
+        val appCount = context.packageManager.getInstalledApplications(PackageManager.MATCH_ALL).size
+        val summary = "باتری: $battery٪؛ ساعت: $time؛ اندروید: ${android.os.Build.VERSION.RELEASE}; برنامه‌های نصب‌شده: $appCount"
+        return ToolResult(true, summary)
+    }
+}
+
+class ListAppsTool(private val context: Context) : Tool {
+    override val name = "list_apps"
+    override val description = "نمایش چند برنامهٔ نصب‌شده برای کمک به پیدا کردن برنامهٔ موردنظر"
+    override val parameters = listOf(ParamSchema("query", "string", "بخشی از نام برنامه؛ خالی برای چند برنامهٔ اخیر", false))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val query = args.optString("query").trim().lowercase(Locale.getDefault())
+        val pm = context.packageManager
+        val apps = pm.getInstalledApplications(PackageManager.MATCH_ALL)
+            .asSequence()
+            .map { it.loadLabel(pm).toString() }
+            .filter { query.isBlank() || it.lowercase(Locale.getDefault()).contains(query) }
+            .distinct()
+            .sorted()
+            .take(12)
+            .toList()
+        return if (apps.isEmpty()) ToolResult(false, "برنامه‌ای مطابق جستجو پیدا نشد.")
+        else ToolResult(true, "برنامه‌ها: ${apps.joinToString("، ")}")
+    }
+}
+
 class FlashlightTool(private val context: Context) : Tool {
     override val name = "toggle_flashlight"
     override val description = "روشن/خاموش کردن چراغ قوه"
     override val parameters = listOf(ParamSchema("state", "string", "on یا off", true))
 
     override suspend fun execute(args: JSONObject): ToolResult {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+            return ToolResult(false, "کنترل چراغ قوه در این نسخه اندروید پشتیبانی نمی‌شود.")
+        }
         val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
         val cameraId = cameraManager.cameraIdList.firstOrNull() ?: return ToolResult(false, "دوربین پیدا نشد.")
         
@@ -422,4 +664,223 @@ class SettingsTool(private val context: Context) : Tool {
             ToolResult(false, "بخش $section در دسترس نیست.")
         }
     }
+}
+
+/** Opens the dialer with a number; the user must press the call button. */
+class PhoneCallTool(private val context: Context) : Tool {
+    override val name = "call_phone"
+    override val description = "باز کردن شماره‌گیر با شماره مشخص؛ تماس نهایی فقط با تأیید کاربر انجام می‌شود"
+    override val parameters = listOf(ParamSchema("phone_number", "string", "شماره تلفن", true))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val number = args.optString("phone_number").trim()
+        if (number.isBlank()) return ToolResult(false, "شماره تلفن وارد نشده است.")
+        val intent = Intent(Intent.ACTION_DIAL, android.net.Uri.parse("tel:${android.net.Uri.encode(number)}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "شماره‌گیر برای $number باز شد؛ برای تماس دکمه تماس را بزنید.")
+    }
+}
+
+/** Opens the default messaging application's inbox without reading SMS content directly. */
+class SmsInboxTool(private val context: Context) : Tool {
+    override val name = "read_sms"
+    override val description = "باز کردن صندوق پیامک برنامه پیش‌فرض برای خواندن پیام‌ها"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val intent = Intent(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_APP_MESSAGING)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "برنامه پیامک پیش‌فرض باز شد؛ پیام‌ها را آنجا بخوانید.")
+    }
+}
+
+/** Opens a prefilled SMS composer; the user must review and send it. */
+class SmsComposeTool(private val context: Context) : Tool {
+    override val name = "send_sms"
+    override val description = "باز کردن پیامک آماده برای بازبینی و ارسال توسط کاربر"
+    override val parameters = listOf(
+        ParamSchema("phone_number", "string", "شماره گیرنده", true),
+        ParamSchema("message", "string", "متن پیامک", true)
+    )
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val number = args.optString("phone_number").trim()
+        val message = args.optString("message").trim()
+        if (number.isBlank() || message.isBlank()) return ToolResult(false, "شماره گیرنده و متن پیامک لازم است.")
+        val intent = Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("smsto:${android.net.Uri.encode(number)}"))
+            .putExtra("sms_body", message)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "پیامک برای $number آماده شد؛ قبل از ارسال آن را بررسی کنید.")
+    }
+}
+
+/** Opens the call log, which acts as the phone assistant's recent-call view. */
+class CallLogTool(private val context: Context) : Tool {
+    override val name = "open_call_log"
+    override val description = "باز کردن گزارش تماس‌ها و دسترسی به تماس‌های اخیر"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("content://call_log/calls"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "گزارش تماس‌های اخیر باز شد.")
+    }
+}
+
+/** Opens the dialer with a common carrier voicemail access code when supported. */
+class VoicemailTool(private val context: Context) : Tool {
+    override val name = "open_voicemail"
+    override val description = "باز کردن صندوق پیام صوتی اپراتور برای گوش دادن توسط کاربر"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val intent = Intent(Intent.ACTION_DIAL, android.net.Uri.parse("tel:*86"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "شماره‌گیر صندوق صوتی باز شد؛ کد اپراتور را بررسی و در صورت نیاز تماس بگیرید.")
+    }
+}
+
+/** Opens a prefilled email composer; the user must review and send it. */
+class EmailComposeTool(private val context: Context) : Tool {
+    override val name = "send_email"
+    override val description = "باز کردن ایمیل آماده برای بازبینی و ارسال توسط کاربر"
+    override val parameters = listOf(
+        ParamSchema("to", "string", "آدرس ایمیل گیرنده", true),
+        ParamSchema("subject", "string", "موضوع ایمیل", false),
+        ParamSchema("body", "string", "متن ایمیل", true)
+    )
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val to = args.optString("to").trim()
+        val subject = args.optString("subject").trim()
+        val body = args.optString("body").trim()
+        if (to.isBlank() || body.isBlank()) return ToolResult(false, "گیرنده و متن ایمیل لازم است.")
+        val uri = android.net.Uri.Builder()
+            .scheme("mailto")
+            .path(to)
+            .appendQueryParameter("subject", subject)
+            .appendQueryParameter("body", body)
+            .build()
+        val intent = Intent(Intent.ACTION_SENDTO, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchExternal(context, intent, "ایمیل برای $to آماده شد؛ قبل از ارسال آن را بررسی کنید.")
+    }
+}
+
+class ActivateModeTool(private val context: Context) : Tool {
+    override val name = "activate_smart_mode"
+    override val description = "فعال کردن حالت هوشمند کار، رانندگی یا خواب و ذخیره آن روی دستگاه"
+    override val parameters = listOf(ParamSchema("mode", "string", "کار، رانندگی یا خواب", true))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val requested = args.optString("mode").trim().lowercase(Locale.ROOT)
+        val mode = when {
+            requested.contains("work") || requested.contains("کار") -> "کار"
+            requested.contains("driv") || requested.contains("رانندگی") -> "رانندگی"
+            requested.contains("sleep") || requested.contains("خواب") -> "خواب"
+            else -> return ToolResult(false, "حالت معتبر نیست؛ یکی از کار، رانندگی یا خواب را انتخاب کنید.")
+        }
+        context.getSharedPreferences("sam_preferences", Context.MODE_PRIVATE).edit()
+            .putString("active_mode", mode)
+            .putLong("active_mode_at", System.currentTimeMillis())
+            .apply()
+        return ToolResult(true, "حالت $mode فعال شد.")
+    }
+}
+
+class DailyDashboardTool(private val context: Context) : Tool {
+    override val name = "daily_dashboard"
+    override val description = "نمایش داشبورد کوتاه روزانه شامل ساعت، باتری و حالت فعال"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val mode = context.getSharedPreferences("sam_preferences", Context.MODE_PRIVATE)
+            .getString("active_mode", "عادی") ?: "عادی"
+        val battery = (context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager)
+            .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val now = Calendar.getInstance()
+        val time = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
+        return ToolResult(true, "داشبورد امروز: ساعت $time؛ باتری $battery٪؛ حالت فعال: $mode.")
+    }
+}
+
+class RememberFactTool(private val context: Context) : Tool {
+    override val name = "remember_fact"
+    override val description = "ذخیره یک یادآوری شخصی فقط روی همین دستگاه"
+    override val parameters = listOf(ParamSchema("fact", "string", "چیزی که باید به خاطر سپرده شود", true))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val fact = args.optString("fact").trim()
+        if (!PrivacyGuard(context).canPersistPersonalMemory()) return ToolResult(false, "در حالت حریم خصوصی یا مهمان، حافظه شخصی غیرفعال است.")
+        if (!PersonalMemory(context).remember(fact)) return ToolResult(false, "متنی برای ذخیره‌کردن دریافت نشد.")
+        return ToolResult(true, "به خاطر سپردم؛ این اطلاعات فقط روی دستگاه ذخیره شد.")
+    }
+}
+
+class ShowMemoryTool(private val context: Context) : Tool {
+    override val name = "show_personal_memory"
+    override val description = "نمایش چیزهایی که کاربر خواسته سام به خاطر بسپارد"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val facts = PersonalMemory(context).facts()
+        return if (facts.isEmpty()) ToolResult(true, "حافظه شخصی خالی است.")
+        else ToolResult(true, "حافظه شخصی:\n${facts.mapIndexed { index, fact -> "${index + 1}. $fact" }.joinToString("\n")}")
+    }
+}
+
+class ClearMemoryTool(private val context: Context) : Tool {
+    override val name = "clear_personal_memory"
+    override val description = "پاک کردن کامل حافظه شخصی ذخیره‌شده روی دستگاه"
+    override val parameters = emptyList<ParamSchema>()
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        PersonalMemory(context).clear()
+        return ToolResult(true, "حافظه شخصی کاملاً پاک شد.")
+    }
+}
+
+class SemanticAppSearchTool(private val context: Context) : Tool {
+    override val name = "find_apps_semantically"
+    override val description = "پیدا کردن برنامه‌ها با مفهوم محاوره‌ای مثل برنامه عکس، قبض، موسیقی یا نقشه"
+    override val parameters = listOf(ParamSchema("intent", "string", "کاری که برنامه باید انجام دهد", true))
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val intent = args.optString("intent").trim()
+        val matches = SemanticAppSearch.findMatches(context, intent)
+        return if (matches.isEmpty()) ToolResult(false, "برنامه‌ای برای «$intent» پیدا نشد.")
+        else ToolResult(true, "برنامه‌های پیشنهادی برای «$intent»: ${matches.map { it.loadLabel(context.packageManager) }.joinToString("، ")}")
+    }
+}
+
+class PrivacyModeTool(private val context: Context) : Tool {
+    override val name = "set_privacy_mode"
+    override val description = "فعال یا خاموش کردن حالت حریم خصوصی یا مهمان روی دستگاه"
+    override val parameters = listOf(
+        ParamSchema("mode", "string", "privacy، guest یا normal", true),
+        ParamSchema("enabled", "boolean", "فعال یا خاموش", true)
+    )
+
+    override suspend fun execute(args: JSONObject): ToolResult {
+        val guard = PrivacyGuard(context)
+        val enabled = args.optBoolean("enabled", true)
+        when (args.optString("mode").lowercase(Locale.ROOT)) {
+            "privacy", "حریم خصوصی" -> guard.setPrivacyMode(enabled)
+            "guest", "مهمان" -> guard.setGuestMode(enabled)
+            "normal", "عادی" -> {
+                guard.setPrivacyMode(false)
+                guard.setGuestMode(false)
+            }
+            else -> return ToolResult(false, "حالت معتبر نیست؛ privacy، guest یا normal را انتخاب کنید.")
+        }
+        return ToolResult(true, "حالت فعلی سام: ${guard.status()}.")
+    }
+}
+
+private fun launchExternal(context: Context, intent: Intent, successMessage: String): ToolResult {
+    if (intent.resolveActivity(context.packageManager) == null) {
+        return ToolResult(false, "برنامه‌ای برای انجام این کار در دستگاه پیدا نشد.")
+    }
+    context.startActivity(intent)
+    return ToolResult(true, successMessage)
 }

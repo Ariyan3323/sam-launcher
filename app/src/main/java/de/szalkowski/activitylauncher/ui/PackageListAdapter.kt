@@ -18,77 +18,128 @@ class PackageListAdapter @Inject constructor(packageListService: PackageListServ
 
     private val allPackages = packageListService.packages
     private var filteredPackages = allPackages
-
     var onItemClick: ((MyPackageInfo) -> Unit)? = null
+    var onItemLongClick: ((MyPackageInfo) -> Boolean)? = null
+
+    fun singleFilteredPackage(): MyPackageInfo? = filteredPackages.singleOrNull()
 
     inner class ViewHolder(viewItem: View) : RecyclerView.ViewHolder(viewItem) {
         lateinit var item: MyPackageInfo
-
         init {
-            itemView.setOnClickListener {
-                onItemClick?.invoke(item)
-            }
+            itemView.setOnClickListener { onItemClick?.invoke(item) }
+            itemView.setOnLongClickListener { onItemLongClick?.invoke(item) ?: false }
         }
     }
 
     var filter: String = ""
         set(value) {
             field = value
-            filteredPackages = allPackages.map { p ->
-                p.copy(
-                    activityNames = p.activityNames.filter { it.matches(field) },
-                    defaultActivityName = p.defaultActivityName?.takeIf { a ->
-                        a.matches(field) || p.matches(field)
-                    })
-            }.filter { p ->
-                p.activityNames.isNotEmpty() || p.defaultActivityName != null
+            val query = value.normalizeSearchText()
+            filteredPackages = allPackages.mapNotNull { packageInfo ->
+                val packageMatch = packageInfo.searchValues().any { it.matchesSmart(query) }
+                val activities = if (query.isBlank() || packageMatch) packageInfo.activityNames
+                else packageInfo.activityNames.filter { it.searchValues().any { name -> name.matchesSmart(query) } }
+                val defaultActivity = packageInfo.defaultActivityName?.takeIf {
+                    query.isBlank() || packageMatch || it.searchValues().any { name -> name.matchesSmart(query) }
+                }
+                if (query.isBlank() || activities.isNotEmpty() || defaultActivity != null) {
+                    packageInfo.copy(activityNames = activities, defaultActivityName = defaultActivity)
+                } else null
             }
-
             notifyDataSetChanged()
         }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val inflater = LayoutInflater.from(parent.context)
-        val view = inflater.inflate(R.layout.list_item_package_list, parent, false)
-        return ViewHolder(view)
-    }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
+        ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.list_item_package_list, parent, false))
 
-    override fun getItemCount(): Int {
-        return filteredPackages.size
-    }
+    override fun getItemCount(): Int = filteredPackages.size
 
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val view = holder.itemView
-        val tvName = view.findViewById<TextView>(R.id.tvName)
-        val tvPackage = view.findViewById<TextView>(R.id.tvClass)
-        val tvVersion = view.findViewById<TextView>(R.id.tvVersion)
-        val tvActivities = view.findViewById<TextView>(R.id.tvActivities)
-        val ivIcon = view.findViewById<ImageView>(R.id.ivIcon)
-
         val item = filteredPackages[position]
-        val activityCount = item.activityNames.size + (item.defaultActivityName?.let { 1 } ?: 0)
         holder.item = item
-        tvName.text = item.name
-        tvVersion.text = item.version
-        tvPackage.text = item.packageName
-        tvActivities.text = "(${activityCount})"
-
-        ivIcon.setImageDrawable(item.icon)
+        view.findViewById<TextView>(R.id.tvName).text = item.name
+        view.findViewById<TextView>(R.id.tvVersion).text = item.version
+        view.findViewById<TextView>(R.id.tvClass).text = item.packageName
+        view.findViewById<TextView>(R.id.tvActivities).text =
+            "(${item.activityNames.size + (item.defaultActivityName?.let { 1 } ?: 0)})"
+        view.findViewById<ImageView>(R.id.ivIcon).setImageDrawable(item.icon)
     }
 }
 
+private fun ActivityName.searchValues(): List<String> = listOf(name, shortCls)
+private fun MyPackageInfo.searchValues(): List<String> =
+    listOf(name, packageName) + searchAliases(name, packageName)
 
-private fun ActivityName.matches(s: String): Boolean =
-    listOf(this.name, this.shortCls).any {
-        it.contains(
-            s, ignoreCase = true
-        )
-    }
+private fun String.matchesSmart(query: String): Boolean {
+    if (query.isBlank()) return true
+    val value = normalizeSearchText()
+    if (value.contains(query)) return true
+    if (value.startsWith(query, ignoreCase = true)) return true
+    if (query.length >= 3 && isSubsequence(query, value)) return true
+    return query.length >= 3 && editDistance(query, value.take(query.length + 2)) <= fuzzyLimit(query.length)
+}
 
-private fun MyPackageInfo.matches(s: String): Boolean =
-    listOf(this.name, this.packageName).any {
-        it.contains(
-            s, ignoreCase = true
-        )
+private fun isSubsequence(query: String, value: String): Boolean {
+    var cursor = 0
+    query.forEach { char ->
+        val found = value.indexOf(char, cursor)
+        if (found < 0) return false
+        cursor = found + 1
     }
+    return true
+}
+
+private fun editDistance(a: String, b: String): Int {
+    var previous = IntArray(b.length + 1) { it }
+    for (i in a.indices) {
+        val current = IntArray(b.length + 1)
+        current[0] = i + 1
+        for (j in b.indices) current[j + 1] = minOf(
+            current[j] + 1,
+            previous[j + 1] + 1,
+            previous[j] + if (a[i] == b[j]) 0 else 1
+        )
+        previous = current
+    }
+    return previous[b.length]
+}
+
+private fun fuzzyLimit(length: Int): Int = when {
+    length <= 4 -> 1
+    length <= 7 -> 2
+    else -> 3
+}
+
+private fun searchAliases(vararg values: String): List<String> = values.flatMap { value ->
+    val normalized = value.normalizeSearchText()
+    listOf(normalized) + commonAliases
+        .filterKeys { normalized.contains(it) }
+        .values.flatten()
+}.distinct()
+
+private val commonAliases = mapOf(
+    "instagram" to listOf("اینستاگرام", "اینستا", "اینستاگرام"),
+    "whatsapp" to listOf("واتساپ", "واتس اپ", "واتزاپ"),
+    "telegram" to listOf("تلگرام", "پیام رسان تلگرام"),
+    "youtube" to listOf("یوتیوب", "یو تیوب"),
+    "chrome" to listOf("کروم", "گوگل کروم"),
+    "firefox" to listOf("فایرفاکس", "فایر فاکس"),
+    "spotify" to listOf("اسپاتیفای", "اسپاتی فای"),
+    "netflix" to listOf("نتفلیکس", "نت فلیکس"),
+    "snap" to listOf("اسنپ"),
+    "torob" to listOf("ترب"),
+    "sheypoor" to listOf("شیپور"),
+    "isam" to listOf("ایسام"),
+    "digikala" to listOf("دیجی کالا", "دیجیکالا")
+).mapValues { (_, aliases) -> aliases.map(String::normalizeSearchText) }
+
+private fun String.normalizeSearchText(): String = lowercase()
+    .replace('ي', 'ی')
+    .replace('ى', 'ی')
+    .replace('ك', 'ک')
+    .replace('ۀ', 'ه')
+    .replace(Regex("[ًٌٍَُِّْـ]"), "")
+    .replace(Regex("[\\s_\\-‌]+"), "")
+    .trim()

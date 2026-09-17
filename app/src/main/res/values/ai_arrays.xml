@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="ai_mode_entries">
+        <item>Local / offline</item>
+        <item>Web knowledge</item>
+        <item>Cloud AI</item>
+    </string-array>
+    <string-array name="ai_mode_values">
+        <item>local</item>
+        <item>web</item>
+        <item>cloud</item>
+    </string-array>
+    <string-array name="ai_provider_entries">
+        <item>OpenAI</item>
+        <item>Gemini</item>
+        <item>OpenAI-compatible / Custom</item>
+    </string-array>
+    <string-array name="ai_provider_values">
+        <item>openai</item>
+        <item>gemini</item>
+        <item>custom</item>
+    </string-array>
+</resources>

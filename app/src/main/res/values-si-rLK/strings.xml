@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">වලංගු නොවන ක්‍රියාකාරකම් සබැඳියක් සපයා ඇත</string>
     <string name="warning_root_check">අවවාදයයි: බොහෝ විට මෙම උපාංගයේ මූල වරප්‍රසාද ලබා ගත නොහැක.</string>
     <string name="exception_invalid_component_name">වලංගු නොවන හෝ හානිකර විය හැකි සංරචක නාමය: %s</string>
-    <string name="exception_command_error">විධානය දෝෂ කේතය ලබා දුන්නේය: %d, ප්‍රතිදානය: %s</string>
+    <string name="exception_command_error">විධානය දෝෂ කේතය ලබා දුන්නේය: %1$d, ප්‍රතිදානය: %2$s</string>
     <string name="category_title_about">ගැන</string>
     <string name="action_view_source">මූලාශ්‍ර කේතය බලන්න</string>
     <string name="summary_action_view_source">මෙම යෙදුමේ මූල කේතය GitHub හි කියවීමට සහ වෙනස් කිරීමට ලබා ගත හැකිය. වැඩිදියුණු කිරීම් සහ දෝෂ නිවැරදි කිරීම් සමඟ අපට  pull requests එවීමට නිදහස ඇත.</string>

@@ -1,14 +1,21 @@
 package de.szalkowski.activitylauncher.ui
 
+import android.animation.ObjectAnimator
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.core.widget.doAfterTextChanged
 import dagger.hilt.android.AndroidEntryPoint
+import de.szalkowski.activitylauncher.AssistantActivity
+import de.szalkowski.activitylauncher.BuildConfig
 import de.szalkowski.activitylauncher.R
 import de.szalkowski.activitylauncher.databinding.FragmentPackageListBinding
 import de.szalkowski.activitylauncher.services.ViewIntentParserService
@@ -23,6 +30,7 @@ class PackageListFragment : Fragment() {
     internal lateinit var viewIntentParserService: ViewIntentParserService
 
     private var _binding: FragmentPackageListBinding? = null
+    private var pulseAnimator: ObjectAnimator? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -43,16 +51,84 @@ class PackageListFragment : Fragment() {
         actionBar?.onActionBarSearchListener = { search ->
             packageListAdapter.filter = search
         }
+        binding.appSearchInput.doAfterTextChanged { text ->
+            val query = text?.toString().orEmpty()
+            packageListAdapter.filter = query
+            if (actionBar?.actionBarSearchText != query) actionBar?.actionBarSearchText = query
+        }
+        binding.appSearchInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                packageListAdapter.singleFilteredPackage()?.let { packageInfo ->
+                    packageListAdapter.onItemClick?.invoke(packageInfo)
+                    true
+                } ?: false
+            } else false
+        }
 
         packageListAdapter.onItemClick = {
+            val launchIntent = requireContext().packageManager
+                .getLaunchIntentForPackage(it.packageName)
+                ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+            if (launchIntent != null) {
+                runCatching { startActivity(launchIntent) }
+                    .onFailure { error ->
+                        Log.e("PackageList", "Could not launch ${it.packageName}", error)
+                        Toast.makeText(requireContext(), getString(R.string.error) + ": ${it.name}", Toast.LENGTH_SHORT).show()
+                    }
+            } else {
+                runCatching {
+                    val action = PackageListFragmentDirections.actionSelectPackage(it.packageName)
+                    findNavController().navigate(action)
+                }.onFailure { error -> Log.e("Navigation", "Could not open app details", error) }
+            }
+
+        }
+        packageListAdapter.onItemLongClick = {
             runCatching {
                 val action = PackageListFragmentDirections.actionSelectPackage(it.packageName)
                 findNavController().navigate(action)
-            }.onFailure { Log.e("Navigation", "Error while navigating from PackageListFragment") }
-
+            }.onFailure { error -> Log.e("Navigation", "Could not open app details", error) }
+            true
         }
+        binding.rvPackages.layoutManager = OrbitalLayoutManager(requireContext())
         binding.rvPackages.adapter = packageListAdapter
         binding.rvPackages.isNestedScrollingEnabled = false
+        binding.rvPackages.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+                val centerX = recyclerView.width / 2
+                val closest = (0 until recyclerView.childCount)
+                    .map { recyclerView.getChildAt(it) }
+                    .minByOrNull { kotlin.math.abs((it.left + it.right) / 2 - centerX) }
+                val holder = closest?.let { recyclerView.getChildViewHolder(it) as? PackageListAdapter.ViewHolder }
+                holder?.item?.let { binding.centerAppIcon.setImageDrawable(it.icon) }
+            }
+        })
+
+        binding.agentStatus.setText(
+            if (BuildConfig.GEMINI_API_KEY.isNotBlank()) R.string.launcher_agent_online
+            else R.string.launcher_agent_local
+        )
+        binding.agentDemoButton.setOnClickListener {
+            openAssistant(getString(R.string.launcher_agent_demo_command))
+        }
+        binding.agentAskButton.setOnClickListener {
+            openAssistant(binding.agentCommandInput.text?.toString().orEmpty())
+        }
+        binding.agentBatteryButton.setOnClickListener { openAssistant("باتری را بررسی کن") }
+        binding.agentSettingsButton.setOnClickListener { openAssistant("تنظیمات را باز کن") }
+        binding.appListButton.setOnClickListener {
+            binding.appSearchInput.setText("")
+            packageListAdapter.filter = ""
+            actionBar?.actionBarSearchText = ""
+            binding.rvPackages.smoothScrollToPosition(0)
+        }
+        pulseAnimator = ObjectAnimator.ofFloat(binding.agentPulse, View.ALPHA, 0.45f, 1f).apply {
+            duration = 1100L
+            repeatMode = ObjectAnimator.REVERSE
+            repeatCount = ObjectAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            start()
+        }
 
         runCatching {
             val intent = activity?.intent ?: return
@@ -70,7 +146,15 @@ class PackageListFragment : Fragment() {
 
     }
 
+    private fun openAssistant(command: String) {
+        val intent = Intent(requireContext(), AssistantActivity::class.java)
+        if (command.isNotBlank()) intent.putExtra(AssistantActivity.EXTRA_INITIAL_COMMAND, command.trim())
+        startActivity(intent)
+    }
+
     override fun onDestroyView() {
+        pulseAnimator?.cancel()
+        pulseAnimator = null
         super.onDestroyView()
         _binding = null
     }

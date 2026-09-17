@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package de.szalkowski.activitylauncher.ui
 
 import android.content.Context
@@ -9,6 +11,7 @@ import de.szalkowski.activitylauncher.databinding.ProgressDialogBinding
 import java.text.NumberFormat
 import java.util.Locale
 
+@Suppress("DEPRECATION")
 abstract class AsyncProvider<ReturnType> internal constructor(
     context: Context, private val listener: Listener<ReturnType>?, showProgressDialog: Boolean
 ) : AsyncTask<Void?, Int?, ReturnType>() {

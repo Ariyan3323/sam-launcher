@@ -1,19 +1,25 @@
 <resources>
-    <string name="assistant_name">دستیار رعد</string>
+    <string name="assistant_name">دستیار سام</string>
     <string name="assistant_bubble_description">دستیار متحرک</string>
-    <string name="assistant_welcome">سلام، من رعد هستم. از من بخواه برنامه‌ای را باز کنم، در وب جست‌وجو کنم یا باتری را بررسی کنم.</string>
+    <string name="assistant_welcome">سلام، من سام هستم. برنامه‌ها را با یک لمس باز می‌کنم؛ لمس طولانی جزئیات برنامه را نشان می‌دهد.</string>
     <string name="assistant_command_hint">دستور خود را بنویسید</string>
     <string name="assistant_voice">صدا</string>
-    <string name="assistant_send">بپرس از رعد</string>
+    <string name="assistant_send">بپرس از سام</string>
     <string name="assistant_voice_prompt">چه کاری برایتان انجام بدهم؟</string>
     <string name="assistant_microphone_required">برای فرمان صوتی، دسترسی میکروفون لازم است.</string>
-    <string name="assistant_voice_unavailable">تشخیص صدا در این دستگاه در دسترس نیست.</string>
+    <string name="assistant_voice_unavailable">سرویس تشخیص صدا پیدا نشد. لطفاً Google Speech Services و زبان فارسی را نصب یا فعال کنید.</string>
     <string name="assistant_browser_unavailable">مرورگری برای انجام این جست‌وجو در دسترس نیست.</string>
+    <string name="assistant_internet_required">برای پاسخ به این سؤال باید از وب کمک بگیرم، اما اینترنت خاموش یا قطع است. لطفاً وای‌فای یا دادهٔ همراه را روشن کنید.</string>
+    <string name="assistant_web_answer_unavailable">فعلاً پاسخ سریع پیدا نشد. دوباره امتحان کنید یا جست‌وجوی وب را باز کنید.</string>
     <string name="assistant_appearance">ظاهر</string>
-    <string name="assistant_appearance_changed">ظاهر رعد تغییر کرد.</string>
+    <string name="assistant_other_ai">هوش‌های دیگر</string>
+    <string name="assistant_choose_ai">انتخاب برنامهٔ هوش مصنوعی</string>
+    <string name="assistant_appearance_changed">ظاهر سام تغییر کرد.</string>
     <string name="assistant_opening_settings">تنظیمات اندروید باز می‌شود.</string>
-    <string name="assistant_help">مثال: باز کن &lt;نام برنامه&gt;، جستجو &lt;موضوع&gt;، باتری، پاک کردن کش یا تنظیمات.</string>
-    <string name="assistant_widget_title">با رعد صحبت کن</string>
+    <string name="assistant_help">مثال: باز کن &lt;نام برنامه&gt;، باتری را بررسی کن، وضعیت حافظه گوشی، پاک کردن کش گوشی، عیب‌یابی سام، آخرین پیام را بخوان یا علایق من.</string>
+    <string name="assistant_widget_hint">با سام صحبت کن</string>
+    <string name="assistant_widget_news_loading">در حال دریافت خبرهای جهان…</string>
+    <string name="assistant_widget_news_offline">خبر زنده در دسترس نیست؛ از سام بپرسید.</string>
     <string name="assistant_time">ساعت %1$d و %2$02d دقیقه و %3$02d ثانیه است.</string>
     <string name="assistant_clock_code_saved">نمونه‌کد ساعت در %1$s ذخیره شد.</string>
     <string name="assistant_clock_code_export_failed">نمونه‌کد ساعت ذخیره نشد.</string>
@@ -23,5 +29,12 @@
     <string name="assistant_opening">%1$s در حال باز شدن است.</string>
     <string name="assistant_searching">در حال جست‌وجوی %1$s در وب.</string>
     <string name="assistant_cache_guidance">کش خود دستیار پاک شد. اندروید به لانچرها اجازهٔ پاک‌کردن کش برنامه‌های دیگر را نمی‌دهد؛ تنظیمات حافظه باز شد تا آن را ایمن مدیریت کنید.</string>
-    <string name="assistant_thinking">رعد در حال فکر کردن است…</string>
+    <string name="assistant_thinking">سام در حال فکر کردن است…</string>
+    <string name="agent_status_local">ایجنت سام: حالت محلی فعال (کلید Gemini تنظیم نشده)</string>
+    <string name="agent_status_gemini">ایجنت سام: حالت هوشمند Gemini فعال</string>
+    <string name="agent_status_openai">ایجنت سام: حالت هوشمند OpenAI فعال</string>
+    <string name="agent_status_custom">ایجنت سام: سرویس هوش مصنوعی سفارشی فعال</string>
+    <string name="agent_status_openai_ready">ایجنت سام: OpenAI تنظیم شده است</string>
+    <string name="agent_status_custom_ready">ایجنت سام: سرویس سفارشی تنظیم شده است</string>
+    <string name="voice_unavailable">ورودی صوتی در دسترس نیست؛ سرویس تشخیص گفتار روی این دستگاه نصب نیست.</string>
 </resources>

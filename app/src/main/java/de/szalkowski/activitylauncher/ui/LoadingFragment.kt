@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
@@ -14,6 +15,7 @@ import de.szalkowski.activitylauncher.R
 import de.szalkowski.activitylauncher.services.PackageListService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Provider
@@ -22,21 +24,29 @@ import javax.inject.Provider
 class LoadingFragment : Fragment() {
     @Inject
     internal lateinit var packageListService: Provider<PackageListService>
+    private var navigationStarted = false
 
     @SuppressLint("RestrictedApi")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                // preload package list
-                packageListService.get()
+            val result = runCatching {
+                withContext(Dispatchers.IO) {
+                    withTimeout(15_000L) {
+                        packageListService.get()
+                    }
+                }
             }
+            result.onFailure { Log.e("LoadingFragment", "Package scan failed or timed out", it) }
 
             withResumed {
-                // navigate to next screen
-                val action = LoadingFragmentDirections.actionLoadingFinished()
-                findNavController().navigate(action)
+                if (navigationStarted) return@withResumed
+                navigationStarted = true
+                runCatching {
+                    val action = LoadingFragmentDirections.actionLoadingFinished()
+                    findNavController().navigate(action)
+                }.onFailure { Log.e("LoadingFragment", "Could not open package list", it) }
             }
         }
 

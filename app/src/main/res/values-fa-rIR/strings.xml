@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">لینک فعالیت نامعتبر ارائه شده است</string>
     <string name="warning_root_check">هشدار: احتمالا امتیازات روت در این دستگاه موجود نیست.</string>
     <string name="exception_invalid_component_name">نام مؤلفه نامعتبر یا بالقوه مضر: %s</string>
-    <string name="exception_command_error">فرمان کد خطای %d را برگرداند، خروجی %s</string>
+    <string name="exception_command_error">فرمان کد خطای %1$d را برگرداند، خروجی %2$s</string>
     <string name="category_title_about">درباره</string>
     <string name="action_view_source">مشاهده کد منبع</string>
     <string name="summary_action_view_source">کد منبع این برنامه برای مشاهده و ویرایش در GitHub در دسترس است. در صورت تمایل در خواست‌های بهبود و رفع اشکال را برای ما ارسال کنید.</string>
@@ -42,6 +42,7 @@
     <string name="action_view_bugs">گزارش مشکل</string>
     <string name="summary_action_view_bugs">لطفا پیشنهادها یا مشکلات خود را در صفحه GitHub پروژه درج کنید.</string>
     <string name="action_filter">پالایش…</string>
+    <string name="launcher_search_apps_hint">جستجوی برنامه‌ها</string>
     <string name="filter_hint">بسته/فعالیت</string>
     <string name="activity_settings">تنظيمات</string>
     <string name="settings_hide_private">پنهان‌سازی اکتیویتی‌های خصوصی</string>
@@ -53,4 +54,7 @@
     <string name="theme_default">پیش‌فرض سیستم</string>
     <string name="theme_light">پوسته روشن</string>
     <string name="theme_dark">پوسته تاریک</string>
+    <string name="launcher_wheel_selected">برنامهٔ انتخاب‌شده</string>
+    <string name="launcher_persian_alphabet">نوار حروف فارسی</string>
+    <string name="launcher_latin_alphabet">نوار حروف انگلیسی</string>
 </resources>

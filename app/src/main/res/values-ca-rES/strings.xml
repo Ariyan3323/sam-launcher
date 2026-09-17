@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">S\'ha proporcionat un enllaç d\'activitat no vàlid</string>
     <string name="warning_root_check">Advertència: els privilegis de root probablement no estiguin disponibles en aquest dispositiu.</string>
     <string name="exception_invalid_component_name">Nom de component no vàlid o potencialment nociu: %s</string>
-    <string name="exception_command_error">L\'ordre ha retornat el codi d\'error: %d, sortida: %s</string>
+    <string name="exception_command_error">L\'ordre ha retornat el codi d\'error: %1$d, sortida: %2$s</string>
     <string name="category_title_about">Quant a</string>
     <string name="action_view_source">Visualitza el codi font</string>
     <string name="summary_action_view_source">El codi font d\'aquesta aplicació està disponible per llegir i modificar a GitHub. No dubteu a enviar-nos sol·licituds d\'extracció (pull requests) amb millores i correccions d\'errors.</string>

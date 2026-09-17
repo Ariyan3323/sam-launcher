@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">Ugyldig aktivitetslenke angitt</string>
     <string name="warning_root_check">Advarsel: Rotprivilegier er sannsynligvis ikke tilgjengelige på denne enheten.</string>
     <string name="exception_invalid_component_name">Ugyldig eller potensielt skadelig komponentnavn: %s</string>
-    <string name="exception_command_error">Kommando returnerte feilkode: %d, utdata: %s</string>
+    <string name="exception_command_error">Kommando returnerte feilkode: %1$d, utdata: %2$s</string>
     <string name="category_title_about">Om</string>
     <string name="action_view_source">Vis kildekode</string>
     <string name="summary_action_view_source">Kildekoden til denne appen er tilgjengelig for lesing og endring på GitHub. Send oss gjerne pull-forespørsler med forbedringer og feilrettinger.</string>

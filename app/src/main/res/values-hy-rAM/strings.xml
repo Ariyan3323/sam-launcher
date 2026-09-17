@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">Տրամադրված է անվավեր գործողության հղում</string>
     <string name="warning_root_check">Զգուշացում. արմատային արտոնությունները, հավանաբար, մատչելի չեն այս սարքում:</string>
     <string name="exception_invalid_component_name">Անվավեր կամ պոտենցիալ վնասակար բաղադրիչի անուն. %s</string>
-    <string name="exception_command_error">Հրամանը վերադարձրեց սխալի կոդ. %d, արդյունք. %s</string>
+    <string name="exception_command_error">Հրամանը վերադարձրեց սխալի կոդ. %1$d, արդյունք. %2$s</string>
     <string name="category_title_about">Մասին</string>
     <string name="action_view_source">Դիտել սկզբնական կոդը</string>
     <string name="summary_action_view_source">Այս հավելվածի սկզբնական կոդը հասանելի է GitHub-ում կարդալու և փոփոխելու համար: Ազատ զգացեք ուղարկել մեզ բարելավումներով և սխալների ուղղումներով ձգման հարցումներ:</string>

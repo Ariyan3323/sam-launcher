@@ -13,14 +13,18 @@ android {
     defaultConfig {
         // Stable package name for local/debug installs.
         applicationId = System.getenv("APPID") ?: "com.ariyan3323.samlauncher.install"
-        minSdk = 16
+        minSdk = 21
         targetSdk = 36
         versionCode = 66
         versionName = "2.1.6"
         buildConfigField("String", "GEMINI_API_KEY", "\"${System.getenv("GEMINI_API_KEY") ?: ""}\"")
+        buildConfigField("String", "OPENAI_API_KEY", "\"${System.getenv("OPENAI_API_KEY") ?: ""}\"")
 
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
 
     flavorDimensions += "distribution"
@@ -28,11 +32,13 @@ android {
         create("oss") {
             // for direct distribution
             dimension = "distribution"
+            buildConfigField("boolean", "ALLOW_SMS_READ", "true")
         }
         create("playStore") {
             // includes Google Play Store specific additions
             dimension = "distribution"
             minSdk = 23
+            buildConfigField("boolean", "ALLOW_SMS_READ", "false")
         }
     }
 
@@ -61,6 +67,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+        languageVersion = "1.9"
     }
     bundle {
         language {
@@ -70,6 +77,9 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+    }
+    lint {
+        disable.add("MissingTranslation")
     }
 }
 
@@ -88,10 +98,16 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.6")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.6")
     implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("org.jsoup:jsoup:1.17.2")
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
     implementation("com.google.dagger:hilt-android:2.50")
     "playStoreImplementation"("com.google.android.play:review-ktx:2.0.2")
     kapt("com.google.dagger:hilt-compiler:2.50")
+    kapt("androidx.room:room-compiler:2.6.1")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("androidx.test:core:1.5.0")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }

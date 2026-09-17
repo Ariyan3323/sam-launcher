@@ -33,7 +33,7 @@
     <string name="error_invalid_activity_link">Предоставлена неверная ссылка на активность</string>
     <string name="warning_root_check">Предупреждение: Скорее всего, на этом устройстве недоступны привилегии суперпользователя.</string>
     <string name="exception_invalid_component_name">Недопустимое или потенциально опасное имя компонента: %s</string>
-    <string name="exception_command_error">Команда вернула код ошибки: %d, результат: %s</string>
+    <string name="exception_command_error">Команда вернула код ошибки: %1$d, результат: %2$s</string>
     <string name="category_title_about">О программе</string>
     <string name="action_view_source">Просмотреть исходный код</string>
     <string name="summary_action_view_source">Исходный код приложения доступен для чтения и изменения на GitHub. Отправляйте нам запросы на включение изменений с улучшениями и исправлениями.</string>

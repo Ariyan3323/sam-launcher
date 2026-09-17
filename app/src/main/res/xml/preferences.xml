@@ -26,6 +26,65 @@
             android:title="@string/settings_language" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/ai_settings_category">
+        <ListPreference
+            android:defaultValue="local"
+            android:entries="@array/ai_mode_entries"
+            android:entryValues="@array/ai_mode_values"
+            android:key="ai_mode"
+            android:title="@string/ai_mode_title"
+            android:summary="@string/ai_mode_summary" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="ai_web_answers"
+            android:title="@string/ai_web_answers_title"
+            android:summary="@string/ai_web_answers_summary" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="ai_auto_refresh"
+            android:title="@string/ai_auto_refresh_title"
+            android:summary="@string/ai_auto_refresh_summary" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="ai_personalization"
+            android:title="@string/ai_personalization_title"
+            android:summary="@string/ai_personalization_summary" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="ai_web_cookies"
+            android:title="@string/ai_web_cookies_title"
+            android:summary="@string/ai_web_cookies_summary" />
+        <ListPreference
+            android:defaultValue="openai"
+            android:entries="@array/ai_provider_entries"
+            android:entryValues="@array/ai_provider_values"
+            android:key="ai_provider"
+            android:title="@string/ai_provider_title" />
+        <EditTextPreference
+            android:key="ai_gemini_key"
+            android:inputType="textPassword"
+            android:title="@string/ai_gemini_key_title"
+            android:summary="@string/ai_key_summary" />
+        <EditTextPreference
+            android:key="ai_openai_key"
+            android:inputType="textPassword"
+            android:title="@string/ai_openai_key_title"
+            android:summary="@string/ai_key_summary" />
+        <EditTextPreference
+            android:defaultValue="https://api.openai.com/v1"
+            android:key="ai_base_url"
+            android:title="@string/ai_base_url_title"
+            android:summary="@string/ai_base_url_summary" />
+        <EditTextPreference
+            android:defaultValue="gpt-4o-mini"
+            android:key="ai_model"
+            android:title="@string/ai_model_title" />
+        <Preference
+            android:key="ai_clear_keys"
+            android:title="@string/ai_clear_keys_title"
+            android:summary="@string/ai_clear_keys_summary" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/category_title_about">
         <Preference
             android:key="action_view_source"

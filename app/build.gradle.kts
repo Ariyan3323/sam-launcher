@@ -101,6 +101,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.17.2")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("com.google.dagger:hilt-android:2.50")
     "playStoreImplementation"("com.google.android.play:review-ktx:2.0.2")
     kapt("com.google.dagger:hilt-compiler:2.50")

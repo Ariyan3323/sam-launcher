@@ -44,6 +44,7 @@ import de.szalkowski.activitylauncher.agent.EngineResponse
 import de.szalkowski.activitylauncher.agent.CaregiverConversationViewModel
 import de.szalkowski.activitylauncher.agent.data.AppDatabase
 import de.szalkowski.activitylauncher.agent.data.UserProfileRepository
+import de.szalkowski.activitylauncher.agent.data.AppManagerRepository
 import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import de.szalkowski.activitylauncher.services.LastNotificationCache
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +73,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var offlineKnowledge: OfflineKnowledgeStore
     private lateinit var knowledgeEngine: SamAgentEngine
     private lateinit var userProfileRepository: UserProfileRepository
+    private lateinit var appManagerRepository: AppManagerRepository
     private val caregiverViewModel: CaregiverConversationViewModel by viewModels()
     private var speakResponses = true
     private var pendingBankOnly = false
@@ -160,6 +162,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         conversationCore = ConversationCore(offlineKnowledge)
         knowledgeEngine = SamAgentEngine(this)
         userProfileRepository = UserProfileRepository(AppDatabase.get(this).userProfileDao())
+        appManagerRepository = AppManagerRepository(this)
         val aiSettings = SecureAiSettings(this)
         val provider = aiSettings.getProvider()
         configuredAiProvider = provider
@@ -471,7 +474,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val profileContext = profile.takeIf { it.isNotBlank() }?.let {
             "؛ پروفایل محلی کاربر (فقط برای شخصی‌سازی پاسخ): $it"
         }.orEmpty()
-        return "زمان: ${now.get(Calendar.HOUR_OF_DAY)}:${now.get(Calendar.MINUTE)}؛ باتری: $batteryLevel٪؛ زبان: fa-IR$profileContext"
+        val apps = appManagerRepository.getInstalledApps()
+            .take(40)
+            .joinToString("، ") { "${it.name} (${it.sizeInMegabytes()}MB)" }
+        val appContext = apps.takeIf { it.isNotBlank() }?.let {
+            "؛ برنامه‌های نصب‌شده برای تحلیل محلی: $it"
+        }.orEmpty()
+        return "زمان: ${now.get(Calendar.HOUR_OF_DAY)}:${now.get(Calendar.MINUTE)}؛ باتری: $batteryLevel٪؛ زبان: fa-IR$profileContext$appContext"
     }
 
     private fun runLocalCommand(rawCommand: String) {
@@ -485,6 +494,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("اخبار جهان") || command.contains("خبرهای امروز") || command.contains("اخبار مهم") ||
                 command.contains("اخبار روز") || command.contains("world news") || command.contains("latest news") -> showWorldNews()
             command == "چه خبر" || command == "چخبر" || command == "چهخبر" || command.contains("چه خبر از جهان") -> showWorldNews()
+            command.contains("برنامه‌های سنگین") || command.contains("برنامه های سنگین") ||
+                command.contains("برنامه‌های کم‌استفاده") || command.contains("برنامه های کم استفاده") ||
+                command.contains("برنامه‌های اضافی") || command.contains("unused apps") ||
+                command.contains("heavy apps") || command.contains("بهینه سازی برنامه") -> showAppOptimizationReport()
             (command.contains("آخرین پیام") || command.contains("آخرینپیام")) &&
                 (command.contains("پیامنگار") || command.contains("پیام‌رسان") || command.contains("پیام رسان")) ->
                 requestLatestNotification("پیام‌رسان", emptyList())
@@ -1025,6 +1038,29 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 val storageIntent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
                 if (storageIntent.resolveActivity(packageManager) != null) startActivity(storageIntent)
                 respond(getString(R.string.assistant_cache_guidance))
+            }
+        }
+    }
+
+    private fun showAppOptimizationReport() {
+        binding.bubble.setState(AssistantBubbleView.State.THINKING)
+        respond("در حال بررسی برنامه‌های نصب‌شده…", speak = false)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val apps = appManagerRepository.getUnusedOrHeavyApps()
+            val report = if (apps.isEmpty()) {
+                "برنامهٔ سنگین یا کم‌استفاده‌ای در بررسی فعلی پیدا نشد."
+            } else {
+                val lines = apps.take(10).mapIndexed { index, app ->
+                    "${index + 1}. ${app.name} — ${app.sizeInMegabytes()} مگابایت؛ ${app.lastUsedLabel()}"
+                }
+                val accessNote = if (appManagerRepository.hasUsageAccess()) "" else
+                    "\n\nبرای تشخیص دقیق آخرین استفاده، دسترسی Usage access را در تنظیمات اندروید فعال کن."
+                "برنامه‌های سنگین یا کم‌استفاده (آستانهٔ حجم ۵۰۰ مگابایت یا عدم استفاده بیش از ۳۰ روز):\n" +
+                    lines.joinToString("\n") + accessNote
+            }
+            withContext(Dispatchers.Main) {
+                binding.bubble.setState(AssistantBubbleView.State.READY)
+                respond(report)
             }
         }
     }

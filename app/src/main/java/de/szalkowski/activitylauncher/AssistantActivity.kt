@@ -27,6 +27,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.activity.viewModels
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.preference.PreferenceManager
 import de.szalkowski.activitylauncher.agent.AgentConfig
 import de.szalkowski.activitylauncher.agent.AgentOutput
@@ -45,6 +49,10 @@ import de.szalkowski.activitylauncher.agent.CaregiverConversationViewModel
 import de.szalkowski.activitylauncher.agent.data.AppDatabase
 import de.szalkowski.activitylauncher.agent.data.UserProfileRepository
 import de.szalkowski.activitylauncher.agent.data.AppManagerRepository
+import de.szalkowski.activitylauncher.agent.data.CaregiverMessageEntity
+import de.szalkowski.activitylauncher.ui.ChatMessageAdapter
+import com.fgmembers.samlauncher.ui.chat.ModernChatScreen
+import androidx.recyclerview.widget.LinearLayoutManager
 import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import de.szalkowski.activitylauncher.services.LastNotificationCache
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +88,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var configuredAiProvider = ""
     private var configuredAiFingerprint = ""
     private val learningPreferences by lazy { getSharedPreferences("sam_learning", MODE_PRIVATE) }
+    private lateinit var chatAdapter: ChatMessageAdapter
+    private var composeMessages by mutableStateOf<List<CaregiverMessageEntity>>(emptyList())
+    private var composeBatteryPercent by mutableStateOf(0)
 
     private val smsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) readLatestSms(pendingBankOnly)
@@ -123,6 +134,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             ?.takeIf { it in 0..100 } ?: -1
         batteryLevel = (broadcastPercent.takeIf { it in 0..100 } ?: propertyPercent)
             .takeIf { it in 0..100 } ?: 0
+        composeBatteryPercent = batteryLevel
         binding.batteryStatus.text = getString(R.string.assistant_battery_status, batteryLevel)
         if (batteryLevel in 0..15) binding.response.text = getString(R.string.assistant_low_battery, batteryLevel)
     }
@@ -130,14 +142,19 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAssistantBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        // Binding remains an off-screen compatibility bridge for voice, TTS and legacy actions.
+        chatAdapter = ChatMessageAdapter()
+        binding.chatRecycler.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = false }
+        binding.chatRecycler.adapter = chatAdapter
         updateBatteryLevel(registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)))
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 caregiverViewModel.messages.collect { messages ->
-                    messages.lastOrNull()?.let { message ->
-                        binding.response.text = message.content
+                    composeMessages = messages
+                    chatAdapter.submitList(messages) {
+                        if (messages.isNotEmpty()) binding.chatRecycler.scrollToPosition(messages.lastIndex)
                     }
+                    messages.lastOrNull()?.let { message -> binding.response.text = message.content }
                 }
             }
         }
@@ -221,8 +238,21 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding.aiSettingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        setContent {
+            ModernChatScreen(
+                messages = composeMessages,
+                isOnline = hasConfiguredAiProvider(),
+                batteryPercent = composeBatteryPercent,
+                status = getString(R.string.assistant_agent_ready),
+                onSend = ::runCommand,
+                onVoice = ::requestVoiceInput,
+                onAppearance = { respond(getString(R.string.assistant_appearance_changed)) },
+                onOtherAi = { shareWithOtherAi("") },
+                onSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
+            )
+        }
         intent.getStringExtra(EXTRA_INITIAL_COMMAND)?.takeIf { it.isNotBlank() }?.let { command ->
-            binding.root.post { runCommand(command) }
+            window.decorView.post { runCommand(command) }
         }
     }
 
@@ -1134,7 +1164,6 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun currentTime(): String {
         val now = Calendar.getInstance()
-        binding.analogClock.setTime(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), now.get(Calendar.SECOND))
         return getString(R.string.assistant_time, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), now.get(Calendar.SECOND))
     }
 

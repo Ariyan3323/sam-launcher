@@ -49,6 +49,21 @@ class CyberHubFragment : Fragment() {
                 startActivity(Intent(requireContext(), AssistantActivity::class.java))
             }
         }
+        val openChat = View.OnClickListener {
+            startActivity(Intent(requireContext(), AssistantActivity::class.java))
+        }
+        binding.avatarFrame.setOnClickListener { navigateWithPulse(it, openChat) }
+        binding.avatarImage.setOnClickListener { navigateWithPulse(binding.avatarFrame, openChat) }
+        binding.avatarState.setOnClickListener { navigateWithPulse(binding.avatarFrame, openChat) }
+        binding.statusText.setOnClickListener(openChat)
+        binding.statusDot.setOnClickListener(openChat)
+        binding.hubEyebrow.setOnClickListener(openChat)
+        binding.hubTitle.setOnClickListener(openChat)
+        binding.hubHint.setOnClickListener(openChat)
+        binding.appsNodeContent.setOnClickListener { binding.nodeApps.performClick() }
+        binding.chatNodeContent.setOnClickListener { binding.nodeChat.performClick() }
+        binding.settingsNodeContent.setOnClickListener { binding.nodeSettings.performClick() }
+        binding.systemNodeContent.setOnClickListener { binding.nodeSystem.performClick() }
         binding.nodeApps.setOnClickListener {
             navigateWithPulse(it) { findNavController().navigate(R.id.PackageListFragment) }
         }
@@ -70,6 +85,10 @@ class CyberHubFragment : Fragment() {
         view.animate().scaleX(0.9f).scaleY(0.9f).setDuration(90L).withEndAction {
             view.animate().scaleX(1f).scaleY(1f).setDuration(130L).withEndAction(action).start()
         }.start()
+    }
+
+    private fun navigateWithPulse(view: View, listener: View.OnClickListener) {
+        navigateWithPulse(view) { listener.onClick(view) }
     }
 
     override fun onDestroyView() {

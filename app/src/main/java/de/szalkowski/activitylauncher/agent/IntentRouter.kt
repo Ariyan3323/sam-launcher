@@ -75,6 +75,17 @@ object IntentRouter {
         .replace('ك', 'ک')
         .replace('ۀ', 'ه')
         .replace(Regex("[ًٌٍَُِّْـ]"), "")
-        .replace(Regex("[\\s‌_-]+"), " ")
+        .replace('\u200c', ' ')
+        .replace(Regex("[\\s_-]+"), " ")
+        .replace(Regex("\\s+"), " ")
         .trim()
 }
+
+fun String.normalizeUserText(): String = lowercase()
+    .replace('ي', 'ی').replace('ى', 'ی').replace('ك', 'ک')
+    .replace('ۀ', 'ه').replace('ة', 'ه')
+    .replace(Regex("[ًٌٍَُِّْـ]"), "")
+    .replace('\u200c', ' ')
+    .replace(Regex("[\\s_-]+"), " ")
+    .replace(Regex("\\s+"), " ")
+    .trim()

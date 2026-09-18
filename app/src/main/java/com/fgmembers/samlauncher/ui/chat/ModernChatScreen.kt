@@ -3,6 +3,7 @@ package com.fgmembers.samlauncher.ui.chat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -40,8 +41,8 @@ fun ModernChatScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     MaterialTheme(colorScheme = darkColorScheme(background = Night, surface = Glass, primary = Neon)) {
-        Column(Modifier.fillMaxSize().background(Night).padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.fillMaxSize().background(Night).padding(horizontal = 12.dp, vertical = 8.dp).animateContentSize()) {
+            Row(Modifier.fillMaxWidth().border(1.dp, Cyan.copy(alpha = .48f), RoundedCornerShape(14.dp)).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 RoboticMascot(isOnline, mascotState)
                 Column(Modifier.weight(1f).padding(start = 8.dp)) { Text("سام", color = Color.White, fontSize = 21.sp); Text(status, color = if (isOnline) Neon else Color(0xFFFF5566), fontSize = 12.sp) }
                 Text("باتری $batteryPercent٪", color = Cyan, fontSize = 12.sp)

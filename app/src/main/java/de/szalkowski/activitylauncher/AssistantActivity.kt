@@ -40,6 +40,7 @@ import de.szalkowski.activitylauncher.agent.SamAgent
 import de.szalkowski.activitylauncher.agent.SecureAiSettings
 import de.szalkowski.activitylauncher.agent.SemanticAppSearch
 import de.szalkowski.activitylauncher.agent.IntentRouter
+import de.szalkowski.activitylauncher.agent.normalizeUserText
 import de.szalkowski.activitylauncher.agent.SamIntentType
 import de.szalkowski.activitylauncher.agent.ConversationCore
 import de.szalkowski.activitylauncher.agent.OfflineKnowledgeStore
@@ -51,6 +52,7 @@ import de.szalkowski.activitylauncher.agent.data.UserProfileRepository
 import de.szalkowski.activitylauncher.agent.data.AppManagerRepository
 import de.szalkowski.activitylauncher.agent.data.CaregiverMessageEntity
 import de.szalkowski.activitylauncher.ui.ChatMessageAdapter
+import de.szalkowski.activitylauncher.ui.MechanicalSfx
 import com.fgmembers.samlauncher.ui.chat.ModernChatScreen
 import com.fgmembers.samlauncher.ui.components.MascotState
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -94,6 +96,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var composeBatteryPercent by mutableStateOf(0)
     private var composeMascotState by mutableStateOf(MascotState.Idle)
     private var composeOnline by mutableStateOf(false)
+    private lateinit var mechanicalSfx: MechanicalSfx
 
     private val smsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) readLatestSms(pendingBankOnly)
@@ -145,6 +148,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAssistantBinding.inflate(layoutInflater)
+        mechanicalSfx = MechanicalSfx(this)
         // Binding remains an off-screen compatibility bridge for voice, TTS and legacy actions.
         chatAdapter = ChatMessageAdapter()
         binding.chatRecycler.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = false }
@@ -228,17 +232,20 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding.command.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND) { submitCommand(); true } else false
         }
-        binding.sendButton.setOnClickListener { submitCommand() }
-        binding.voiceButton.setOnClickListener { requestVoiceInput() }
-        binding.bubble.setOnClickListener { binding.command.requestFocus() }
+        binding.sendButton.setOnClickListener { mechanicalSfx.messageSent(); submitCommand() }
+        binding.voiceButton.setOnClickListener { mechanicalSfx.click(); requestVoiceInput() }
+        binding.bubble.setOnClickListener { mechanicalSfx.click(); binding.command.requestFocus() }
         binding.appearanceButton.setOnClickListener {
+            mechanicalSfx.panelOpen()
             binding.bubble.nextAppearance()
             respond(getString(R.string.assistant_appearance_changed))
         }
         binding.otherAiButton.setOnClickListener {
+            mechanicalSfx.panelOpen()
             shareWithOtherAi(binding.command.text?.toString().orEmpty().trim())
         }
         binding.aiSettingsButton.setOnClickListener {
+            mechanicalSfx.panelOpen()
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         setContent {
@@ -248,13 +255,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 batteryPercent = composeBatteryPercent,
                 status = getString(R.string.assistant_agent_ready),
                 mascotState = composeMascotState,
-                onSend = ::runCommand,
-                onVoice = ::requestVoiceInput,
-                onAttachment = ::openAttachmentPicker,
-                onQuickAction = ::handleQuickAction,
-                onAppearance = { respond(getString(R.string.assistant_appearance_changed)) },
-                onOtherAi = { shareWithOtherAi("") },
-                onSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
+                onSend = { mechanicalSfx.messageSent(); runCommand(it) },
+                onVoice = { mechanicalSfx.click(); requestVoiceInput() },
+                onAttachment = { mechanicalSfx.panelOpen(); openAttachmentPicker() },
+                onQuickAction = { mechanicalSfx.panelOpen(); handleQuickAction(it) },
+                onAppearance = { mechanicalSfx.panelOpen(); respond(getString(R.string.assistant_appearance_changed)) },
+                onOtherAi = { mechanicalSfx.panelOpen(); shareWithOtherAi("") },
+                onSettings = { mechanicalSfx.panelOpen(); startActivity(Intent(this, SettingsActivity::class.java)) },
             )
         }
         intent.getStringExtra(EXTRA_INITIAL_COMMAND)?.takeIf { it.isNotBlank() }?.let { command ->
@@ -294,6 +301,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     override fun onDestroy() {
+        if (::mechanicalSfx.isInitialized) mechanicalSfx.close()
         if (::textToSpeech.isInitialized) {
             textToSpeech.stop()
             textToSpeech.shutdown()
@@ -705,7 +713,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun offlineConversationReply(question: String): String =
-        "من سام هستم و می‌توانم با تو گفتگو کنم. دربارهٔ «${question.take(80)}» اطلاعات کافی محلی ندارم؛ اگر اجازه بدهی، با اتصال اینترنت و منبع وب بررسی می‌کنم. همچنین می‌توانی سؤال را کوتاه‌تر یا با جزئیات بیشتر بگویی."
+        "پاسخ محلی برای «${question.take(80)}» پیدا نشد. سؤال را کوتاه‌تر بپرس یا اتصال اینترنت را فعال کن."
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()
@@ -804,55 +812,29 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun openApp(query: String) {
-        val normalized = query.trim().lowercase(Locale.ROOT)
+        val normalized = extractAppQuery(query).normalizeUserText()
         if (normalized.isBlank()) { respond(getString(R.string.assistant_help)); return }
         if (!privacyGuard.canOpenApp(normalized)) {
             respond("حالت مهمان اجازه باز کردن این برنامه را نمی‌دهد.")
             return
         }
-        val appAliases = mapOf(
-            "شیپور" to listOf("sheypoor", "sheypur", "sheypour"),
-            "شپور" to listOf("sheypoor", "sheypur", "sheypour"),
-            "ترب" to listOf("torob", "torobshop"),
-            "تربچه" to listOf("torob", "torobshop"),
-            "اسنپ" to listOf("snapp", "com.snapp"),
-            "اسنپ فود" to listOf("snappfood", "com.snappfood"),
-            "ایسام" to listOf("esam", "com.esam"),
-            "دیوار" to listOf("divar", "divar.ir"),
-            "کافه بازار" to listOf("cafebazaar", "bazaar"),
-            "بازار" to listOf("cafebazaar", "bazaar"),
-            "آپارات" to listOf("aparat"),
-            "بله" to listOf("bale"),
-            "روبیکا" to listOf("rubika"),
-            "ایتا" to listOf("eitaa"),
-            "نشان" to listOf("neshan"),
-            "بلد" to listOf("balad")
-        )
-        val learnedPackage = learningPreferences.getString("app_query_$normalized", null)
-        val learnedMatch = learnedPackage?.let {
-            runCatching { packageManager.getApplicationInfo(it, PackageManager.MATCH_ALL) }.getOrNull()
-        }
-        val matchTerms = listOf(normalized) + appAliases[normalized].orEmpty()
-        val directMatch = learnedMatch ?: packageManager.getInstalledApplications(PackageManager.MATCH_ALL).firstOrNull { app ->
-            val label = app.loadLabel(packageManager).toString().lowercase(Locale.ROOT)
-            val packageName = app.packageName.lowercase(Locale.ROOT)
-            matchTerms.any { term -> label.contains(term) || packageName.contains(term) }
-        }
-        val match = directMatch ?: SemanticAppSearch.findMatches(this, normalized, 1).firstOrNull()
-        val launchIntent = match?.let { packageManager.getLaunchIntentForPackage(it.packageName) }
-        if (launchIntent == null) {
-            respond(getString(R.string.assistant_app_not_found, query))
-        } else {
-            runCatching { startActivity(launchIntent) }
-                .onSuccess {
-                    recordLearning("app", match.loadLabel(packageManager).toString())
-                    learningPreferences.edit()
-                        .putString("app_query_$normalized", match.packageName)
-                        .putString("app_label_${match.packageName}", match.loadLabel(packageManager).toString())
-                        .apply()
-                    respond(getString(R.string.assistant_opening, match.loadLabel(packageManager)))
-                }
-                .onFailure { respond("باز کردن ${match.loadLabel(packageManager)} ممکن نشد؛ برنامه را از فهرست لانچر امتحان کن.") }
+        respond("در حال پیدا کردن برنامه…", speak = false)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                val match = SemanticAppSearch.findMatches(this@AssistantActivity, normalized, 1).firstOrNull()
+                match to match?.let { packageManager.getLaunchIntentForPackage(it.packageName) }
+            }.getOrNull()
+            withContext(Dispatchers.Main) {
+                val match = result?.first
+                val launchIntent = result?.second
+                if (match == null || launchIntent == null) respond(getString(R.string.assistant_app_not_found, normalized))
+                else runCatching { startActivity(launchIntent) }.onSuccess {
+                    val label = match.loadLabel(packageManager).toString()
+                    recordLearning("app", label)
+                    learningPreferences.edit().putString("app_query_$normalized", match.packageName).apply()
+                    respond(getString(R.string.assistant_opening, label))
+                }.onFailure { respond("باز کردن برنامه ممکن نشد.") }
+            }
         }
     }
 

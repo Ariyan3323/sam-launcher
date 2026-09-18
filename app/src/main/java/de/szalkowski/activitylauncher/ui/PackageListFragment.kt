@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.core.widget.doAfterTextChanged
+import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import de.szalkowski.activitylauncher.AssistantActivity
 import de.szalkowski.activitylauncher.BuildConfig
@@ -90,19 +91,12 @@ class PackageListFragment : Fragment() {
             }.onFailure { error -> Log.e("Navigation", "Could not open app details", error) }
             true
         }
-        binding.rvPackages.layoutManager = OrbitalLayoutManager(requireContext())
+        val columns = (resources.configuration.screenWidthDp / 96).coerceIn(2, 5)
+        binding.rvPackages.layoutManager = GridLayoutManager(requireContext(), columns)
         binding.rvPackages.adapter = packageListAdapter
         binding.rvPackages.isNestedScrollingEnabled = false
-        binding.rvPackages.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
-                val centerX = recyclerView.width / 2
-                val closest = (0 until recyclerView.childCount)
-                    .map { recyclerView.getChildAt(it) }
-                    .minByOrNull { kotlin.math.abs((it.left + it.right) / 2 - centerX) }
-                val holder = closest?.let { recyclerView.getChildViewHolder(it) as? PackageListAdapter.ViewHolder }
-                holder?.item?.let { binding.centerAppIcon.setImageDrawable(it.icon) }
-            }
-        })
+        binding.rvPackages.addItemDecoration(GridSpacingDecoration(8))
+        binding.centerAppIcon.visibility = View.GONE
 
         binding.agentStatus.setText(
             if (BuildConfig.GEMINI_API_KEY.isNotBlank()) R.string.launcher_agent_online

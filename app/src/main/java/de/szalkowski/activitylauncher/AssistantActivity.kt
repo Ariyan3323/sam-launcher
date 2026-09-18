@@ -110,18 +110,28 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
-            batteryLevel = if (level >= 0 && scale > 0) level * 100 / scale else -1
-            binding.batteryStatus.text = getString(R.string.assistant_battery_status, batteryLevel)
-            if (batteryLevel in 0..15) binding.response.text = getString(R.string.assistant_low_battery, batteryLevel)
+            updateBatteryLevel(intent)
         }
+    }
+
+    private fun updateBatteryLevel(intent: Intent?) {
+        val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+        val broadcastPercent = if (level >= 0 && scale > 0) level * 100 / scale else -1
+        val propertyPercent = (getSystemService(BATTERY_SERVICE) as? BatteryManager)
+            ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            ?.takeIf { it in 0..100 } ?: -1
+        batteryLevel = (broadcastPercent.takeIf { it in 0..100 } ?: propertyPercent)
+            .takeIf { it in 0..100 } ?: 0
+        binding.batteryStatus.text = getString(R.string.assistant_battery_status, batteryLevel)
+        if (batteryLevel in 0..15) binding.response.text = getString(R.string.assistant_low_battery, batteryLevel)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAssistantBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        updateBatteryLevel(registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)))
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 caregiverViewModel.messages.collect { messages ->
@@ -218,7 +228,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onStart() {
         super.onStart()
-        ContextCompat.registerReceiver(this, batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED)
+        val initial = ContextCompat.registerReceiver(
+            this,
+            batteryReceiver,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        updateBatteryLevel(initial)
     }
 
     override fun onResume() {

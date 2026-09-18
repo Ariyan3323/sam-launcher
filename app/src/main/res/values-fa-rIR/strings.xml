@@ -57,4 +57,25 @@
     <string name="launcher_wheel_selected">برنامهٔ انتخاب‌شده</string>
     <string name="launcher_persian_alphabet">نوار حروف فارسی</string>
     <string name="launcher_latin_alphabet">نوار حروف انگلیسی</string>
+    <string name="ai_settings_category">ارائه‌دهندهٔ هوش مصنوعی</string>
+    <string name="ai_mode_title">حالت سام</string>
+    <string name="ai_mode_summary">انتخاب حالت محلی، دانش وب یا هوش ابری</string>
+    <string name="ai_web_answers_title">اجازهٔ کمک وب برای پرسش‌های دشوار</string>
+    <string name="ai_web_answers_summary">در صورت فعال‌بودن، سام هنگام ناکافی‌بودن دانش محلی می‌تواند منابع عمومی وب را جست‌وجو کند.</string>
+    <string name="ai_auto_refresh_title">به‌روزرسانی خودکار دانش عمومی</string>
+    <string name="ai_auto_refresh_summary">دانش غیرشخصی را هنگام دسترسی به اینترنت به‌روز می‌کند؛ منبع و تاریخ نگه‌داری می‌شود.</string>
+    <string name="ai_personalization_title">شخصی‌سازی سام روی این دستگاه</string>
+    <string name="ai_personalization_summary">ترجیحات و سبک گفت‌وگو را به‌صورت محلی به خاطر بسپار؛ پیام‌های حساس حذف می‌شوند.</string>
+    <string name="ai_web_cookies_title">اجازهٔ کوکی‌ها و نشست‌های وب</string>
+    <string name="ai_web_cookies_summary">اختیاری و به‌صورت پیش‌فرض خاموش است؛ کوکی‌ها ممکن است دادهٔ حساب یا ردیابی داشته باشند.</string>
+    <string name="ai_provider_title">ارائه‌دهندهٔ فعال</string>
+    <string name="ai_gemini_key_title">کلید API جمنای</string>
+    <string name="ai_openai_key_title">کلید API اوپن‌ای‌آی</string>
+    <string name="ai_key_summary">به‌صورت رمزنگاری‌شده روی این دستگاه ذخیره می‌شود و داخل APK قرار نمی‌گیرد.</string>
+    <string name="ai_base_url_title">نشانی پایهٔ سفارشی API</string>
+    <string name="ai_base_url_summary">برای سرویس‌های سازگار با OpenAI؛ مانند https://api.example.com/v1</string>
+    <string name="ai_model_title">نام مدل</string>
+    <string name="ai_clear_keys_title">پاک‌کردن کلیدهای هوش مصنوعی</string>
+    <string name="ai_clear_keys_summary">همهٔ کلیدهای ذخیره‌شدهٔ محلی را حذف می‌کند.</string>
+    <string name="ai_keys_cleared">کلیدهای هوش مصنوعی از این دستگاه پاک شدند.</string>
 </resources>

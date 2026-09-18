@@ -145,4 +145,6 @@
     <string name="agent_status_custom">Sam agent: custom AI smart mode active</string>
     <string name="agent_status_openai_ready">Sam agent: OpenAI configured</string>
     <string name="agent_status_custom_ready">Sam agent: custom provider configured</string>
+    <string name="cyber_settings">Hub settings</string>
+    <string name="cyber_avatar">Sam cyber avatar</string>
 </resources>

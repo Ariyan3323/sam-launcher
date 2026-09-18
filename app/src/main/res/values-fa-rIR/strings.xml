@@ -78,4 +78,6 @@
     <string name="ai_clear_keys_title">پاک‌کردن کلیدهای هوش مصنوعی</string>
     <string name="ai_clear_keys_summary">همهٔ کلیدهای ذخیره‌شدهٔ محلی را حذف می‌کند.</string>
     <string name="ai_keys_cleared">کلیدهای هوش مصنوعی از این دستگاه پاک شدند.</string>
+    <string name="cyber_settings">تنظیمات هاب</string>
+    <string name="cyber_avatar">آواتار سایبری سام</string>
 </resources>

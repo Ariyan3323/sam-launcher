@@ -1,0 +1,37 @@
+<resources>
+    <color name="cyber_black">#05070B</color>
+    <color name="cyber_surface">#0B1118</color>
+    <color name="cyber_green">#62FF9A</color>
+    <color name="cyber_cyan">#52E8FF</color>
+    <color name="cyber_purple">#B88CFF</color>
+    <color name="cyber_violet">#F15BFF</color>
+    <color name="cyber_text">#F4FBFF</color>
+    <color name="cyber_text_muted">#8BA2B2</color>
+    <color name="cyber_node_green">#11291F</color>
+    <color name="cyber_node_cyan">#102A34</color>
+    <color name="cyber_node_purple">#221839</color>
+    <color name="cyber_node_violet">#301632</color>
+    <style name="CyberNodeContent">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">10dp</item>
+    </style>
+    <style name="CyberNodeIcon">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/cyber_text</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:fontFamily">sans</item>
+    </style>
+    <style name="CyberNodeLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:textColor">@color/cyber_text</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans</item>
+    </style>
+</resources>

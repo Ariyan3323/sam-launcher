@@ -42,10 +42,14 @@ class MainActivity : AppCompatActivity(), ActionBarSearch {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
         val navController = navHostFragment.navController
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (destination.id == R.id.CyberHubFragment) supportActionBar?.hide()
+            else supportActionBar?.show()
+        }
 
         // define top level destinations (no back button)
         appBarConfiguration =
-            AppBarConfiguration(setOf(R.id.LoadingFragment, R.id.PackageListFragment))
+            AppBarConfiguration(setOf(R.id.LoadingFragment, R.id.CyberHubFragment, R.id.PackageListFragment))
         setupActionBarWithNavController(navController, appBarConfiguration)
     }
 

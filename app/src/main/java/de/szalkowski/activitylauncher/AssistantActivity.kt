@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.StatFs
 import android.provider.Settings
 import android.provider.Telephony
+import android.provider.ContactsContract
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -88,6 +89,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private val caregiverViewModel: CaregiverConversationViewModel by viewModels()
     private var speakResponses = true
     private var pendingBankOnly = false
+    private var pendingContactName = ""
     private var configuredAiProvider = ""
     private var configuredAiFingerprint = ""
     private val learningPreferences by lazy { getSharedPreferences("sam_learning", MODE_PRIVATE) }
@@ -123,6 +125,11 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             binding.voiceStatus.setText(R.string.assistant_voice_error)
             respond(getString(R.string.assistant_microphone_required))
         }
+    }
+
+    private val contactsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) lookupAndDialContact(pendingContactName)
+        else respond("برای جستجوی مخاطب، اجازهٔ مخاطبین لازم است.")
     }
 
     private val batteryReceiver = object : BroadcastReceiver() {
@@ -943,15 +950,32 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun prepareCall(rawCommand: String) {
         val number = Regex("[+]?[-\\d() ]{7,}").find(rawCommand)?.value?.trim()
-        if (number == null) {
-            respond("شماره تماس را هم بگو؛ مثلاً «با 09121234567 تماس بگیر».")
-            return
+        if (number != null) { dialNumber(number); return }
+        val name = rawCommand.replace(Regex("(?i)call|تماس بگیر|زنگ بزن|با|لطفاً|لطفا"), " ")
+            .replace(Regex("\\s+"), " ").trim()
+        if (name.isBlank()) { respond("نام مخاطب را بگو؛ مثلاً «با علی تماس بگیر». "); return }
+        pendingContactName = name
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            contactsPermission.launch(Manifest.permission.READ_CONTACTS)
+        } else lookupAndDialContact(name)
+    }
+
+    private fun lookupAndDialContact(name: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val phone = runCatching {
+                contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                    "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} LIKE ?",
+                    arrayOf("%$name%"), null)?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+            }.getOrNull()
+            withContext(Dispatchers.Main) { if (phone == null) respond("مخاطبی با نام «$name» پیدا نشد.") else dialNumber(phone) }
         }
+    }
+
+    private fun dialNumber(number: String) {
         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(number)}"))
-        if (intent.resolveActivity(packageManager) != null) {
-            startActivity(intent)
-            respond("شماره‌گیر برای $number باز شد؛ تماس نهایی با تأیید تو انجام می‌شود.")
-        } else respond("شماره‌گیر روی این گوشی پیدا نشد.")
+        if (intent.resolveActivity(packageManager) != null) { startActivity(intent); respond("شماره‌گیر آماده شد؛ تماس نهایی با تأیید تو انجام می‌شود.") }
+        else respond("شماره‌گیر روی این گوشی پیدا نشد.")
     }
 
     private fun openSystemAssistant() {

@@ -27,10 +27,7 @@ class SamAgentEngine(private val context: Context) {
         knowledgeDao.findKnowledge(query)?.takeIf { it.isNotBlank() }?.let {
             return EngineResponse.Text("دانش آفلاین: $it")
         }
-        if (!allowWeb) return EngineResponse.Text("برای جستجوی وب باید اجازهٔ کمک وب را در تنظیمات فعال کنی.")
-        if (!hasValidatedInternet()) {
-            return EngineResponse.Text("اینترنت در دسترس نیست؛ پاسخ محلی سام فعال است.")
-        }
+        if (!allowWeb || !hasValidatedInternet()) return EngineResponse.Text("")
 
         val fetched = webSearchTool.searchWeb(query)
         if (fetched.isNotBlank() && !fetched.contains("انجام نشد")) {

@@ -59,13 +59,7 @@ object IntentRouter {
         .replace(Regex("^در (وب|اینترنت)\\s*"), "")
         .trim()
 
-    private fun extractAppTarget(input: String): String = input
-        .replace(Regex("(?i)find my|find app|locate app|open|launch|start|run"), " ")
-        .replace(Regex("باز کن|اجرا کن|راه‌اندازی کن|راه اندازی کن|برو به|برو توی|برو تو"), " ")
-        .replace(Regex("(?:^|\\s)(برنامه|لطفاً|لطفا|را|رو)(?=\\s|$)"), " ")
-        .replace(Regex("\\s+"), " ")
-        .trim()
-        .let(::normalize)
+    private fun extractAppTarget(input: String): String = AppCommandNormalizer.cleanAppTarget(input)
 
     private fun containsAny(value: String, vararg terms: String): Boolean = terms.any(value::contains)
 

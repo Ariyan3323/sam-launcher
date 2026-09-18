@@ -53,7 +53,7 @@ object SemanticAppSearch {
     )
 
     fun findMatches(context: Context, query: String, limit: Int = 12): List<ApplicationInfo> {
-        val normalized = normalize(query).removeCommandWords()
+        val normalized = AppCommandNormalizer.cleanAppTarget(query)
         if (normalized.isBlank()) return emptyList()
         val terms = buildTerms(normalized)
         val pm = context.packageManager
@@ -124,10 +124,6 @@ object SemanticAppSearch {
         .replace(Regex("[\\s_\\-]+"), " ")
         .replace(Regex("\\s+"), " ")
         .trim()
-
-    private fun String.removeCommandWords(): String = replace(
-        Regex("^(لطفاً\\s+|لطفا\\s+)?(برنامه\\s+)?(باز\\s*کن|اجرا\\s*کن|راه\\s*اندازی\\s*کن|بازکردن|اجرا|open|launch|run|start)\\s+", RegexOption.IGNORE_CASE), ""
-    ).replace(Regex("\\s+(رو|را|rо|please)$", RegexOption.IGNORE_CASE), "").trim()
 
     private fun variants(value: String): List<String> {
         val normalized = normalize(value)

@@ -41,6 +41,7 @@ import de.szalkowski.activitylauncher.agent.SamAgent
 import de.szalkowski.activitylauncher.agent.SecureAiSettings
 import de.szalkowski.activitylauncher.agent.SemanticAppSearch
 import de.szalkowski.activitylauncher.agent.IntentRouter
+import de.szalkowski.activitylauncher.agent.AppCommandNormalizer
 import de.szalkowski.activitylauncher.agent.normalizeUserText
 import de.szalkowski.activitylauncher.agent.SamIntentType
 import de.szalkowski.activitylauncher.agent.ConversationCore
@@ -390,6 +391,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             return
         }
         val selectedMode = SecureAiSettings(this).getMode()
+        // Natural language must reach the configured Agent/LLM; only explicit phone
+        // actions are handled by the deterministic local router.
+        if (!isDeterministicPhoneCommand(rawCommand) && hasConfiguredAiProvider()) {
+            updateAgentStatus()
+            runAgentCommand(rawCommand)
+            return
+        }
         if (IntentRouter.route(rawCommand).type == SamIntentType.READ_LATEST_NOTIFICATION) {
             updateAgentStatus()
             runLocalCommand(rawCommand)
@@ -845,15 +853,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun extractAppQuery(rawCommand: String): String {
-        return rawCommand
-            .replace(Regex("(?i)find my|find app|locate app|find|open|launch|run|start"), " ")
-            .replace(Regex("باز کن|اجرا کن|راه‌اندازی کن|راه اندازی کن|پیدا کن|یافتن برنامه"), " ")
-            .replace(Regex("(?i)please|the|app|application"), " ")
-            .replace(Regex("برنامه|لطفاً|لطفا|یک|رو|را|مناسب|برام|برایش"), " ")
-            .replace(Regex("\\s+"), " ")
-            .trim()
-    }
+    private fun extractAppQuery(rawCommand: String): String =
+        AppCommandNormalizer.cleanAppTarget(rawCommand)
 
     private fun requestLatestSms(bankOnly: Boolean = false) {
         if (!BuildConfig.ALLOW_SMS_READ) {

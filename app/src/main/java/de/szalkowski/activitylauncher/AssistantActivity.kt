@@ -42,6 +42,8 @@ import de.szalkowski.activitylauncher.agent.OfflineKnowledgeStore
 import de.szalkowski.activitylauncher.agent.SamAgentEngine
 import de.szalkowski.activitylauncher.agent.EngineResponse
 import de.szalkowski.activitylauncher.agent.CaregiverConversationViewModel
+import de.szalkowski.activitylauncher.agent.data.AppDatabase
+import de.szalkowski.activitylauncher.agent.data.UserProfileRepository
 import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import de.szalkowski.activitylauncher.services.LastNotificationCache
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +71,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var conversationCore: ConversationCore
     private lateinit var offlineKnowledge: OfflineKnowledgeStore
     private lateinit var knowledgeEngine: SamAgentEngine
+    private lateinit var userProfileRepository: UserProfileRepository
     private val caregiverViewModel: CaregiverConversationViewModel by viewModels()
     private var speakResponses = true
     private var pendingBankOnly = false
@@ -156,6 +159,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         offlineKnowledge = OfflineKnowledgeStore(this)
         conversationCore = ConversationCore(offlineKnowledge)
         knowledgeEngine = SamAgentEngine(this)
+        userProfileRepository = UserProfileRepository(AppDatabase.get(this).userProfileDao())
         val aiSettings = SecureAiSettings(this)
         val provider = aiSettings.getProvider()
         configuredAiProvider = provider
@@ -377,13 +381,14 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding.agentStatus.setText(R.string.assistant_thinking)
         respond(getString(R.string.assistant_thinking), speak = false)
         lifecycleScope.launch(Dispatchers.IO) {
+            val agentContext = deviceContext()
             val settings = SecureAiSettings(this@AssistantActivity)
-            val primary = runCatching { agent.processCommand(rawCommand, deviceContext()) }
+            val primary = runCatching { agent.processCommand(rawCommand, agentContext) }
                 .getOrElse { AgentOutput("خطای اجرای Provider: ${it.message.orEmpty().take(140)}", success = false) }
             val primaryProvider = settings.getProvider()
             val fallback = if (!primary.success && settings.getMode() == "cloud") {
                 alternateProviderAgent(settings, primaryProvider)?.let { candidate ->
-                    runCatching { candidate.processCommand(rawCommand, deviceContext()) }.getOrNull()
+                    runCatching { candidate.processCommand(rawCommand, agentContext) }.getOrNull()
                 }
             } else null
             val output = fallback?.takeIf { it.success } ?: primary
@@ -460,9 +465,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun String.isConfigured(): Boolean = isNotBlank() && this != "YOUR_GEMINI_API_KEY_HERE"
 
-    private fun deviceContext(): String {
+    private suspend fun deviceContext(): String {
         val now = Calendar.getInstance()
-        return "زمان: ${now.get(Calendar.HOUR_OF_DAY)}:${now.get(Calendar.MINUTE)}؛ باتری: $batteryLevel٪؛ زبان: fa-IR"
+        val profile = userProfileRepository.promptSummary()
+        val profileContext = profile.takeIf { it.isNotBlank() }?.let {
+            "؛ پروفایل محلی کاربر (فقط برای شخصی‌سازی پاسخ): $it"
+        }.orEmpty()
+        return "زمان: ${now.get(Calendar.HOUR_OF_DAY)}:${now.get(Calendar.MINUTE)}؛ باتری: $batteryLevel٪؛ زبان: fa-IR$profileContext"
     }
 
     private fun runLocalCommand(rawCommand: String) {
@@ -1096,7 +1105,12 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun rememberFact(fact: String) {
         if (!privacyGuard.canPersistPersonalMemory()) {
             respond("در حالت حریم خصوصی یا مهمان، حافظه شخصی غیرفعال است.")
-        } else if (personalMemory.remember(fact)) respond("به خاطر سپردم؛ این اطلاعات فقط روی دستگاه ذخیره شد.")
+        } else if (personalMemory.remember(fact)) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                userProfileRepository.save("memory_${fact.hashCode()}", fact, "memory")
+            }
+            respond("به خاطر سپردم؛ این اطلاعات فقط روی دستگاه ذخیره شد.")
+        }
         else respond("چیزی برای ذخیره‌کردن پیدا نکردم.")
     }
 

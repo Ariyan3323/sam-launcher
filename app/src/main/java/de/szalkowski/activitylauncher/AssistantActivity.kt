@@ -246,6 +246,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 status = getString(R.string.assistant_agent_ready),
                 onSend = ::runCommand,
                 onVoice = ::requestVoiceInput,
+                onAttachment = ::openAttachmentPicker,
                 onAppearance = { respond(getString(R.string.assistant_appearance_changed)) },
                 onOtherAi = { shareWithOtherAi("") },
                 onSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
@@ -310,6 +311,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun submitCommand() {
         val command = binding.command.text?.toString()?.trim().orEmpty()
         if (command.isNotEmpty()) runCommand(command)
+    }
+
+    private fun openAttachmentPicker() {
+        startActivity(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+        })
     }
 
     private fun requestVoiceInput() {

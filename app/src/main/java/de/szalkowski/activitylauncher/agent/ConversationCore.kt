@@ -37,7 +37,7 @@ class ConversationCore(private val knowledge: OfflineKnowledgeStore? = null) {
 
     private fun genericReply(original: String): String {
         knowledge?.search(original)?.firstOrNull()?.let { return "از دانشی که قبلاً با اجازهٔ تو روی گوشی ذخیره شده: $it" }
-        return "حرفت را شنیدم: «${original.take(160)}». در حالت آفلاین می‌توانم دربارهٔ موضوعات پایه و کارهای گوشی کمک کنم. اگر پاسخ تازه یا تخصصی لازم است، می‌توانم فقط با اجازهٔ تو در وب بررسی کنم."
+        return "برای پاسخ دقیق‌تر، این درخواست به اتصال آنلاین نیاز دارد. برای کارهای گوشی مثل باتری، برنامه‌ها و تنظیمات می‌توانم همین‌جا انجامش بدهم."
     }
 
     private fun rememberTopic(value: String) {

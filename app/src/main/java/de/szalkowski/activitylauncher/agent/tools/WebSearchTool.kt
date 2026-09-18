@@ -18,10 +18,19 @@ class WebSearchTool {
                 .get()
             val snippets = doc.select(".result__snippet")
                 .take(3)
-                .joinToString("\n") { it.text().trim() }
+                .map { cleanSnippet(it.text()) }
+                .filter { it.length > 20 }
+                .distinct()
+                .joinToString("\n") { "• $it" }
             snippets.ifBlank { "اطلاعات تازه‌ای در وب یافت نشد." }
         }.getOrElse {
             "جستجوی وب انجام نشد؛ حالت آفلاین سام در دسترس است."
         }
     }
+
+    private fun cleanSnippet(raw: String): String = raw
+        .replace(Regex("\\b(likes?|comments?|shares?|views?|followers?)\\s*[:：]?\\s*[\\d,.]+\\b", RegexOption.IGNORE_CASE), "")
+        .replace(Regex("\\b(۲۰|۲۰۲[۰-۹]|202[0-9])[-/]\\d{1,2}[-/]\\d{1,2}\\b"), "")
+        .replace(Regex("\\s+"), " ")
+        .trim(' ', '-', '•', ':', '،')
 }

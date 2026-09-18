@@ -525,13 +525,13 @@ class OpenAppTool(private val context: Context) : Tool {
     override val parameters = listOf(ParamSchema("app_name", "string", "نام برنامه", true))
 
     override suspend fun execute(args: JSONObject): ToolResult {
-        val appName = args.getString("app_name").lowercase(Locale.getDefault())
+        val appName = cleanAppCommand(args.getString("app_name"))
         val privacyGuard = PrivacyGuard(context)
         if (!privacyGuard.canOpenApp(appName)) return ToolResult(false, "حالت مهمان اجازه باز کردن این برنامه را نمی‌دهد.")
         val pm = context.packageManager
         val apps = pm.getInstalledApplications(PackageManager.MATCH_ALL)
         val directMatch = apps.firstOrNull {
-            it.loadLabel(pm).toString().lowercase(Locale.getDefault()).contains(appName)
+            normalizeAppText(it.loadLabel(pm).toString()).contains(normalizeAppText(appName))
         }
         val match = directMatch ?: SemanticAppSearch.findMatches(context, appName, 1).firstOrNull()
         val intent = match?.let { pm.getLaunchIntentForPackage(it.packageName) }
@@ -547,6 +547,17 @@ class OpenAppTool(private val context: Context) : Tool {
             ToolResult(false, "برنامه '$appName' پیدا نشد.")
         }
     }
+
+    private fun cleanAppCommand(value: String): String = value.lowercase(Locale.ROOT)
+        .replace('ي', 'ی').replace('ى', 'ی').replace('ك', 'ک')
+        .replace(Regex("[ًٌٍَُِّْـ]"), "")
+        .replace(Regex("^(لطفاً|لطفا)?\\s*(برنامه\\s+)?(باز\\s*کن|اجرا\\s*کن|راه\\s*اندازی\\s*کن|open|launch|run|start)\\s+"), "")
+        .replace(Regex("\\s+(رو|را)$"), "")
+        .trim()
+
+    private fun normalizeAppText(value: String): String = value.lowercase(Locale.ROOT)
+        .replace('ي', 'ی').replace('ى', 'ی').replace('ك', 'ک')
+        .replace(Regex("[\\s_\\-‌]+"), "")
 }
 
 class SearchWebTool(private val context: Context) : Tool {

@@ -52,6 +52,7 @@ import de.szalkowski.activitylauncher.agent.data.AppManagerRepository
 import de.szalkowski.activitylauncher.agent.data.CaregiverMessageEntity
 import de.szalkowski.activitylauncher.ui.ChatMessageAdapter
 import com.fgmembers.samlauncher.ui.chat.ModernChatScreen
+import com.fgmembers.samlauncher.ui.components.MascotState
 import androidx.recyclerview.widget.LinearLayoutManager
 import de.szalkowski.activitylauncher.databinding.ActivityAssistantBinding
 import de.szalkowski.activitylauncher.services.LastNotificationCache
@@ -91,6 +92,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var chatAdapter: ChatMessageAdapter
     private var composeMessages by mutableStateOf<List<CaregiverMessageEntity>>(emptyList())
     private var composeBatteryPercent by mutableStateOf(0)
+    private var composeMascotState by mutableStateOf(MascotState.Idle)
+    private var composeOnline by mutableStateOf(false)
 
     private val smsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) readLatestSms(pendingBankOnly)
@@ -241,12 +244,14 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setContent {
             ModernChatScreen(
                 messages = composeMessages,
-                isOnline = hasConfiguredAiProvider(),
+                isOnline = composeOnline,
                 batteryPercent = composeBatteryPercent,
                 status = getString(R.string.assistant_agent_ready),
+                mascotState = composeMascotState,
                 onSend = ::runCommand,
                 onVoice = ::requestVoiceInput,
                 onAttachment = ::openAttachmentPicker,
+                onQuickAction = ::handleQuickAction,
                 onAppearance = { respond(getString(R.string.assistant_appearance_changed)) },
                 onOtherAi = { shareWithOtherAi("") },
                 onSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
@@ -320,6 +325,16 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         })
     }
 
+    private fun handleQuickAction(action: String) {
+        when (action) {
+            "files" -> openAttachmentPicker()
+            "system" -> runCommand("وضعیت سیستم را بگو")
+            "settings" -> startActivity(Intent(this, SettingsActivity::class.java))
+            "search" -> { binding.command.setText("جستجو: "); binding.command.requestFocus() }
+            "flashlight" -> runCommand("چراغ قوه را روشن کن")
+        }
+    }
+
     private fun requestVoiceInput() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startVoiceInput()
         else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
@@ -353,6 +368,12 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding.command.setText(rawCommand)
         caregiverViewModel.saveUserMessage(rawCommand)
         learnInteraction(rawCommand)
+        if (rawCommand.contains("اتصال آنلاین") || rawCommand.contains("اتصال انلاین") || rawCommand.contains("online", ignoreCase = true)) {
+            SecureAiSettings(this).setMode("cloud")
+            composeOnline = hasConfiguredAiProvider() && isNetworkAvailable()
+            respond(if (composeOnline) "اتصال آنلاین برقرار شد." else "حالت آنلاین فعال شد؛ برای پاسخ ابری، کلید AI و اینترنت را بررسی کن.")
+            return
+        }
         val selectedMode = SecureAiSettings(this).getMode()
         if (IntentRouter.route(rawCommand).type == SamIntentType.READ_LATEST_NOTIFICATION) {
             updateAgentStatus()
@@ -414,6 +435,12 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             (settings.get("openai").isConfigured() || BuildConfig.OPENAI_API_KEY.isConfigured())
     }
 
+    private fun isNetworkAvailable(): Boolean {
+        val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        val network = manager.activeNetwork ?: return false
+        return manager.getNetworkCapabilities(network)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+    }
+
     private fun isDeterministicPhoneCommand(rawCommand: String): Boolean {
         val command = rawCommand.lowercase(Locale.ROOT)
         return listOf(
@@ -434,6 +461,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun runAgentCommand(rawCommand: String) {
+        composeMascotState = MascotState.Thinking
         binding.bubble.setState(AssistantBubbleView.State.THINKING)
         binding.agentStatus.setText(R.string.assistant_thinking)
         respond(getString(R.string.assistant_thinking), speak = false)
@@ -457,6 +485,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         updateAgentStatus(output.success)
                     }
                         binding.bubble.setState(if (output.success) AssistantBubbleView.State.READY else AssistantBubbleView.State.ERROR)
+                        composeMascotState = if (output.success) MascotState.Speaking else MascotState.Idle
                         if (!output.success) {
                             // Cloud failure must never leave the user without an answer.
                             // Keep the failure in the status line, then execute the same
@@ -1230,6 +1259,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun respond(message: String, speak: Boolean = speakResponses) {
+        composeMascotState = if (speak && message.isNotBlank()) MascotState.Speaking else MascotState.Idle
         binding.response.text = message
         caregiverViewModel.saveAssistantMessage(message)
         if (speak && ::textToSpeech.isInitialized && message.isNotBlank()) {

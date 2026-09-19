@@ -171,7 +171,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun onHidePrivateUpdated(newValue: Boolean): Boolean {
-        prefs.edit().putBoolean("hide_hide_private", newValue).apply()
+        prefs.edit().putBoolean("hide_private", newValue).apply()
         needsRestart = true
         return true
     }

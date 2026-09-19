@@ -16,8 +16,8 @@ android {
         applicationId = "com.fgmembers.samlauncher"
         minSdk = 21
         targetSdk = 36
-        versionCode = 66
-        versionName = "2.1.6"
+        versionCode = 67
+        versionName = "2.1.7"
         buildConfigField("String", "GEMINI_API_KEY", "\"${System.getenv("GEMINI_API_KEY") ?: ""}\"")
         buildConfigField("String", "OPENAI_API_KEY", "\"${System.getenv("OPENAI_API_KEY") ?: ""}\"")
 

@@ -1,6 +1,7 @@
 <resources>
     <color name="cyber_black">#05070B</color>
     <color name="cyber_surface">#0B1118</color>
+    <color name="cyber_panel">#101C26</color>
     <color name="cyber_green">#62FF9A</color>
     <color name="cyber_cyan">#52E8FF</color>
     <color name="cyber_purple">#B88CFF</color>

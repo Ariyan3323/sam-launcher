@@ -1,6 +1,10 @@
 package de.szalkowski.activitylauncher.ui
 
 import android.content.Intent
+import android.content.Context
+import android.app.ActivityManager
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +20,22 @@ import de.szalkowski.activitylauncher.databinding.FragmentCyberHubBinding
 class CyberHubFragment : Fragment() {
     private var _binding: FragmentCyberHubBinding? = null
     private val binding get() = _binding!!
+    private val healthTicker = object : Runnable {
+        override fun run() {
+            if (_binding == null) return
+            val memory = ActivityManager.MemoryInfo()
+            (requireContext().getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.getMemoryInfo(memory)
+            val battery = requireContext().registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                ?.let { intent ->
+                    val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                    val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+                    if (level >= 0) (level * 100 / scale.coerceAtLeast(1)) else -1
+                } ?: -1
+            val ram = if (memory.totalMem > 0) ((memory.totalMem - memory.availMem) * 100 / memory.totalMem).toInt() else -1
+            binding.systemHealthText.text = "CPU READY   RAM ${ram.coerceAtLeast(0)}%   BAT ${battery.coerceAtLeast(0)}%"
+            binding.systemHealthCard.postDelayed(this, 3000L)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -79,6 +99,7 @@ class CyberHubFragment : Fragment() {
         }
         binding.settingsButton.setOnClickListener { startActivity(Intent(requireContext(), SettingsActivity::class.java)) }
         binding.languageButton.setOnClickListener { startActivity(Intent(requireContext(), SettingsActivity::class.java)) }
+        binding.systemHealthCard.post(healthTicker)
     }
 
     private fun navigateWithPulse(view: View, action: () -> Unit) {
@@ -92,6 +113,7 @@ class CyberHubFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        binding.systemHealthCard.removeCallbacks(healthTicker)
         _binding = null
         super.onDestroyView()
     }

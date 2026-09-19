@@ -4,6 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_cyber_hub"
+    android:layoutDirection="rtl"
+    android:textDirection="rtl"
     android:paddingStart="16dp"
     android:paddingTop="12dp"
     android:paddingEnd="16dp"
@@ -88,8 +90,8 @@
 
     <FrameLayout
         android:id="@+id/avatarFrame"
-        android:layout_width="140dp"
-        android:layout_height="140dp"
+        android:layout_width="0dp"
+        android:layout_height="156dp"
         android:layout_marginTop="18dp"
         android:background="@drawable/bg_cyber_avatar"
         android:clickable="true"
@@ -122,8 +124,8 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/nodeApps"
-        android:layout_width="88dp"
-        android:layout_height="88dp"
+        android:layout_width="148dp"
+        android:layout_height="76dp"
         android:layout_marginStart="4dp"
         android:layout_marginTop="14dp"
         android:clickable="true"
@@ -152,8 +154,8 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/nodeChat"
-        android:layout_width="88dp"
-        android:layout_height="88dp"
+        android:layout_width="148dp"
+        android:layout_height="76dp"
         android:layout_marginEnd="4dp"
         android:layout_marginTop="14dp"
         android:clickable="true"
@@ -182,8 +184,8 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/nodeSettings"
-        android:layout_width="88dp"
-        android:layout_height="88dp"
+        android:layout_width="148dp"
+        android:layout_height="76dp"
         android:layout_marginStart="4dp"
         android:layout_marginTop="16dp"
         android:clickable="true"
@@ -212,8 +214,8 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/nodeSystem"
-        android:layout_width="88dp"
-        android:layout_height="88dp"
+        android:layout_width="148dp"
+        android:layout_height="76dp"
         android:layout_marginEnd="4dp"
         android:layout_marginTop="16dp"
         android:clickable="true"
@@ -246,10 +248,50 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:gravity="center"
-        android:text="یک نود یا آواتار را لمس کنید"
+        android:text="سام گوش می‌دهد؛ یک پنل یا آواتار را لمس کنید"
         android:textColor="@color/cyber_text_muted"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/nodeSettings" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/systemHealthCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        app:cardBackgroundColor="@color/cyber_panel"
+        app:cardCornerRadius="12dp"
+        app:strokeColor="@color/cyber_cyan"
+        app:strokeWidth="1dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/hubHint">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp">
+            <TextView
+                android:id="@+id/systemHealthText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="monospace"
+                android:text="CPU READY   RAM --   BAT --"
+                android:textColor="@color/cyber_cyan"
+                android:textDirection="ltr"
+                android:textSize="11sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="سلامت سیستم"
+                android:textColor="@color/cyber_text"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

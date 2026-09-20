@@ -153,6 +153,12 @@
                 app:strokeColor="@color/cyber_cyan"
                 app:strokeWidth="1dp">
                 <LinearLayout style="@style/CyberHealthContent">
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_dashboard_cpu"
+                        android:tint="@color/cyber_cyan" />
                     <TextView android:text="CPU" style="@style/CyberHealthLabel" />
                     <TextView android:id="@+id/healthCpuValue" android:text="READY" style="@style/CyberHealthValue" />
                 </LinearLayout>
@@ -167,6 +173,12 @@
                 app:strokeColor="@color/cyber_purple"
                 app:strokeWidth="1dp">
                 <LinearLayout style="@style/CyberHealthContent">
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_dashboard_ram"
+                        android:tint="@color/cyber_purple" />
                     <TextView android:text="RAM" style="@style/CyberHealthLabel" />
                     <TextView android:id="@+id/healthRamValue" android:text="--" style="@style/CyberHealthValue" />
                 </LinearLayout>
@@ -181,6 +193,12 @@
                 app:strokeColor="@color/cyber_violet"
                 app:strokeWidth="1dp">
                 <LinearLayout style="@style/CyberHealthContent">
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_dashboard_temp"
+                        android:tint="@color/cyber_violet" />
                     <TextView android:text="TEMP" style="@style/CyberHealthLabel" />
                     <TextView android:id="@+id/healthTempValue" android:text="--°C" style="@style/CyberHealthValue" />
                 </LinearLayout>
@@ -195,6 +213,12 @@
                 app:strokeColor="@color/cyber_green"
                 app:strokeWidth="1dp">
                 <LinearLayout style="@style/CyberHealthContent">
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_dashboard_network"
+                        android:tint="@color/cyber_green" />
                     <TextView android:text="NETWORK" style="@style/CyberHealthLabel" />
                     <TextView android:id="@+id/healthNetworkValue" android:text="OFFLINE" style="@style/CyberHealthValue" />
                 </LinearLayout>
@@ -221,6 +245,9 @@
                 android:layout_height="52dp"
                 android:layout_margin="4dp"
                 android:layout_weight="1"
+                app:icon="@drawable/ic_quick_gallery"
+                app:iconGravity="textStart"
+                app:iconTint="@color/cyber_cyan"
                 android:text="گالری"
                 android:textColor="@color/cyber_cyan"
                 android:textSize="11sp" />
@@ -231,6 +258,9 @@
                 android:layout_height="52dp"
                 android:layout_margin="4dp"
                 android:layout_weight="1"
+                app:icon="@drawable/ic_quick_music"
+                app:iconGravity="textStart"
+                app:iconTint="@color/cyber_green"
                 android:text="موزیک"
                 android:textColor="@color/cyber_green"
                 android:textSize="11sp" />
@@ -241,6 +271,9 @@
                 android:layout_height="52dp"
                 android:layout_margin="4dp"
                 android:layout_weight="1"
+                app:icon="@drawable/ic_quick_messages"
+                app:iconGravity="textStart"
+                app:iconTint="@color/cyber_violet"
                 android:text="پیام‌ها"
                 android:textColor="@color/cyber_violet"
                 android:textSize="11sp" />

@@ -41,8 +41,7 @@ class CyberHubFragment : Fragment() {
             } == true
             binding.healthCpuValue.text = "READY"
             val ramText = if (ram >= 0) "$ram٪" else "--"
-            val batteryText = if (battery >= 0) "BAT $battery٪" else "BAT --"
-            binding.healthRamValue.text = "$ramText  $batteryText"
+            binding.healthRamValue.text = ramText
             binding.healthTempValue.text = temperature?.let { "$it°C" } ?: "--°C"
             binding.healthNetworkValue.text = if (networkOnline) "ONLINE" else "NO SIGNAL"
             binding.healthCpuCard.postDelayed(this, 3000L)

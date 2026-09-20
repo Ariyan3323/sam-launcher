@@ -774,7 +774,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun offlineConversationReply(question: String): String =
-        "برای «${question.take(80)}» دادهٔ ذخیره‌شدهٔ کافی ندارم؛ سام بر پایهٔ اصول شناخته‌شده، فرض‌ها و شواهد موجود تحلیل می‌کند."
+        "سام موضوع «${question.take(80)}» را بر پایهٔ اصول شناخته‌شده، فرض‌ها و شواهد موجود تحلیل می‌کند."
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()

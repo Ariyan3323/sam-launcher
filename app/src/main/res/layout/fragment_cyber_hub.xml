@@ -1,297 +1,328 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_cyber_hub"
+    android:fillViewport="true"
     android:layoutDirection="rtl"
-    android:textDirection="rtl"
-    android:paddingStart="16dp"
-    android:paddingTop="12dp"
-    android:paddingEnd="16dp"
-    android:paddingBottom="16dp">
+    android:textDirection="rtl">
 
     <LinearLayout
-        android:id="@+id/topStatus"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-        <TextView
-            android:id="@+id/statusDot"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="●"
-            android:textColor="@color/cyber_green"
-            android:textSize="18sp" />
-        <TextView
-            android:id="@+id/statusText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="سام // آنلاین"
-            android:textColor="@color/cyber_text_muted"
-            android:textSize="12sp"
-            android:fontFamily="sans" />
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/languageButton"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="فا / EN"
-            android:textColor="@color/cyber_cyan"
-            android:textSize="11sp" />
-        <ImageButton
-            android:id="@+id/settingsButton"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="@drawable/bg_cyber_icon_button"
-            android:contentDescription="@string/cyber_settings"
-            android:src="@drawable/ic_settings"
-            android:tint="@color/cyber_cyan" />
-    </LinearLayout>
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="24dp">
 
-    <TextView
-        android:id="@+id/hubEyebrow"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:letterSpacing="0.16"
-        android:text="SAM // CYBER-HUB"
-        android:textColor="@color/cyber_cyan"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/topStatus" />
-
-    <TextView
-        android:id="@+id/hubTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:text="مرکز فرمان سام"
-        android:textColor="@color/cyber_text"
-        android:textSize="25sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hubEyebrow" />
-
-    <FrameLayout
-        android:id="@+id/avatarFrame"
-        android:layout_width="0dp"
-        android:layout_height="156dp"
-        android:layout_marginTop="18dp"
-        android:background="@drawable/bg_cyber_avatar"
-        android:clickable="true"
-        android:focusable="true"
-        android:elevation="12dp"
-        android:contentDescription="@string/cyber_avatar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hubTitle">
-        <ImageView
-            android:id="@+id/avatarImage"
-            android:layout_width="92dp"
-            android:layout_height="92dp"
-            android:layout_gravity="center"
-            android:contentDescription="@string/cyber_avatar"
-            android:src="@drawable/cyber_robot_avatar" />
-        <TextView
-            android:id="@+id/avatarState"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            android:layout_marginBottom="9dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="READY"
-            android:textColor="@color/cyber_green"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-    </FrameLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/nodeApps"
-        android:layout_width="148dp"
-        android:layout_height="76dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="14dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:foreground="?attr/selectableItemBackground"
-        app:cardBackgroundColor="@color/cyber_node_cyan"
-        app:cardCornerRadius="44dp"
-        app:strokeColor="@color/cyber_cyan"
-        app:strokeWidth="2dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hubTitle" />
-
-    <LinearLayout
-        android:id="@+id/appsNodeContent"
-        style="@style/CyberNodeContent"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:clickable="false"
-        app:layout_constraintBottom_toBottomOf="@id/nodeApps"
-        app:layout_constraintEnd_toEndOf="@id/nodeApps"
-        app:layout_constraintStart_toStartOf="@id/nodeApps"
-        app:layout_constraintTop_toTopOf="@id/nodeApps">
-        <TextView style="@style/CyberNodeIcon" android:text="▦" />
-        <TextView style="@style/CyberNodeLabel" android:text="برنامه‌ها" />
-    </LinearLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/nodeChat"
-        android:layout_width="148dp"
-        android:layout_height="76dp"
-        android:layout_marginEnd="4dp"
-        android:layout_marginTop="14dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:foreground="?attr/selectableItemBackground"
-        app:cardBackgroundColor="@color/cyber_node_green"
-        app:cardCornerRadius="44dp"
-        app:strokeColor="@color/cyber_green"
-        app:strokeWidth="2dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hubTitle" />
-
-    <LinearLayout
-        android:id="@+id/chatNodeContent"
-        style="@style/CyberNodeContent"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:clickable="false"
-        app:layout_constraintBottom_toBottomOf="@id/nodeChat"
-        app:layout_constraintEnd_toEndOf="@id/nodeChat"
-        app:layout_constraintStart_toStartOf="@id/nodeChat"
-        app:layout_constraintTop_toTopOf="@id/nodeChat">
-        <TextView style="@style/CyberNodeIcon" android:text="⌁" />
-        <TextView style="@style/CyberNodeLabel" android:text="چت با سام" />
-    </LinearLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/nodeSettings"
-        android:layout_width="148dp"
-        android:layout_height="76dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="16dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:foreground="?attr/selectableItemBackground"
-        app:cardBackgroundColor="@color/cyber_node_violet"
-        app:cardCornerRadius="44dp"
-        app:strokeColor="@color/cyber_violet"
-        app:strokeWidth="2dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/avatarFrame" />
-
-    <LinearLayout
-        android:id="@+id/settingsNodeContent"
-        style="@style/CyberNodeContent"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:clickable="false"
-        app:layout_constraintBottom_toBottomOf="@id/nodeSettings"
-        app:layout_constraintEnd_toEndOf="@id/nodeSettings"
-        app:layout_constraintStart_toStartOf="@id/nodeSettings"
-        app:layout_constraintTop_toTopOf="@id/nodeSettings">
-        <TextView style="@style/CyberNodeIcon" android:text="⚙" />
-        <TextView style="@style/CyberNodeLabel" android:text="تنظیمات" />
-    </LinearLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/nodeSystem"
-        android:layout_width="148dp"
-        android:layout_height="76dp"
-        android:layout_marginEnd="4dp"
-        android:layout_marginTop="16dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:foreground="?attr/selectableItemBackground"
-        app:cardBackgroundColor="@color/cyber_node_purple"
-        app:cardCornerRadius="44dp"
-        app:strokeColor="@color/cyber_purple"
-        app:strokeWidth="2dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/avatarFrame" />
-
-    <LinearLayout
-        android:id="@+id/systemNodeContent"
-        style="@style/CyberNodeContent"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:clickable="false"
-        app:layout_constraintBottom_toBottomOf="@id/nodeSystem"
-        app:layout_constraintEnd_toEndOf="@id/nodeSystem"
-        app:layout_constraintStart_toStartOf="@id/nodeSystem"
-        app:layout_constraintTop_toTopOf="@id/nodeSystem">
-        <TextView style="@style/CyberNodeIcon" android:text="◈" />
-        <TextView style="@style/CyberNodeLabel" android:text="وضعیت سیستم" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/hubHint"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:text="سام گوش می‌دهد؛ یک پنل یا آواتار را لمس کنید"
-        android:textColor="@color/cyber_text_muted"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/nodeSettings" />
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/systemHealthCard"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="8dp"
-        app:cardBackgroundColor="@color/cyber_panel"
-        app:cardCornerRadius="12dp"
-        app:strokeColor="@color/cyber_cyan"
-        app:strokeWidth="1dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hubHint">
         <LinearLayout
+            android:id="@+id/topStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="12dp">
+            android:orientation="horizontal">
             <TextView
-                android:id="@+id/systemHealthText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="monospace"
-                android:text="CPU READY   RAM --   BAT --"
-                android:textColor="@color/cyber_cyan"
-                android:textDirection="ltr"
-                android:textSize="11sp" />
-            <TextView
+                android:id="@+id/statusDot"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="سلامت سیستم"
-                android:textColor="@color/cyber_text"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:text="●"
+                android:textColor="@color/cyber_green"
+                android:textSize="18sp" />
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="سام // آنلاین"
+                android:textColor="@color/cyber_text_muted"
+                android:textSize="12sp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/languageButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:text="فا / EN"
+                android:textColor="@color/cyber_cyan"
+                android:textSize="11sp" />
+            <ImageButton
+                android:id="@+id/settingsButton"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_cyber_icon_button"
+                android:contentDescription="@string/cyber_settings"
+                android:src="@drawable/ic_settings"
+                android:tint="@color/cyber_cyan" />
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+        <TextView
+            android:id="@+id/hubEyebrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:letterSpacing="0.16"
+            android:text="SAM // SMART LAUNCH"
+            android:textColor="@color/cyber_cyan"
+            android:textSize="12sp" />
+        <TextView
+            android:id="@+id/hubTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="5dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="مرکز فرمان سام"
+            android:textColor="@color/cyber_text"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/avatarFrame"
+            android:layout_width="match_parent"
+            android:layout_height="156dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_cyber_avatar"
+            android:clickable="true"
+            android:contentDescription="@string/cyber_avatar"
+            android:elevation="12dp"
+            android:focusable="true">
+            <ImageView
+                android:id="@+id/avatarImage"
+                android:layout_width="92dp"
+                android:layout_height="92dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/cyber_avatar"
+                android:src="@drawable/cyber_robot_avatar" />
+            <TextView
+                android:id="@+id/avatarState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="10dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="READY"
+                android:textColor="@color/cyber_green"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/optimizeButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="10dp"
+                android:minHeight="38dp"
+                android:text="OPTIMIZE NOW"
+                android:textColor="@color/cyber_text"
+                android:textSize="10sp"
+                app:backgroundTint="@color/cyber_violet"
+                app:cornerRadius="18dp" />
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="سلامت سیستم"
+            android:textColor="@color/cyber_text"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:rowCount="2"
+            android:useDefaultMargins="true">
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/healthCpuCard"
+                android:layout_width="0dp"
+                android:layout_height="82dp"
+                android:layout_columnWeight="1"
+                app:cardBackgroundColor="@color/cyber_node_cyan"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/cyber_cyan"
+                app:strokeWidth="1dp">
+                <LinearLayout style="@style/CyberHealthContent">
+                    <TextView android:text="CPU" style="@style/CyberHealthLabel" />
+                    <TextView android:id="@+id/healthCpuValue" android:text="READY" style="@style/CyberHealthValue" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/healthRamCard"
+                android:layout_width="0dp"
+                android:layout_height="82dp"
+                android:layout_columnWeight="1"
+                app:cardBackgroundColor="@color/cyber_node_purple"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/cyber_purple"
+                app:strokeWidth="1dp">
+                <LinearLayout style="@style/CyberHealthContent">
+                    <TextView android:text="RAM" style="@style/CyberHealthLabel" />
+                    <TextView android:id="@+id/healthRamValue" android:text="--" style="@style/CyberHealthValue" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/healthTempCard"
+                android:layout_width="0dp"
+                android:layout_height="82dp"
+                android:layout_columnWeight="1"
+                app:cardBackgroundColor="@color/cyber_node_violet"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/cyber_violet"
+                app:strokeWidth="1dp">
+                <LinearLayout style="@style/CyberHealthContent">
+                    <TextView android:text="TEMP" style="@style/CyberHealthLabel" />
+                    <TextView android:id="@+id/healthTempValue" android:text="--°C" style="@style/CyberHealthValue" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/healthNetworkCard"
+                android:layout_width="0dp"
+                android:layout_height="82dp"
+                android:layout_columnWeight="1"
+                app:cardBackgroundColor="@color/cyber_node_green"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/cyber_green"
+                app:strokeWidth="1dp">
+                <LinearLayout style="@style/CyberHealthContent">
+                    <TextView android:text="NETWORK" style="@style/CyberHealthLabel" />
+                    <TextView android:id="@+id/healthNetworkValue" android:text="OFFLINE" style="@style/CyberHealthValue" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </GridLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="دسترسی سریع"
+            android:textColor="@color/cyber_text"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/quickGallery"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:layout_weight="1"
+                android:text="گالری"
+                android:textColor="@color/cyber_cyan"
+                android:textSize="11sp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/quickMusic"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:layout_weight="1"
+                android:text="موزیک"
+                android:textColor="@color/cyber_green"
+                android:textSize="11sp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/quickMessages"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_margin="4dp"
+                android:layout_weight="1"
+                android:text="پیام‌ها"
+                android:textColor="@color/cyber_violet"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/hubHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="سام گوش می‌دهد؛ یک کارت یا آواتار را لمس کنید"
+            android:textColor="@color/cyber_text_muted"
+            android:textSize="12sp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/nodeApps"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/cyber_node_cyan"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/cyber_cyan"
+            app:strokeWidth="1dp">
+            <LinearLayout android:id="@+id/appsNodeContent" style="@style/CyberNodeContent" android:orientation="horizontal">
+                <TextView style="@style/CyberNodeIcon" android:text="▦" android:textSize="22sp" />
+                <TextView style="@style/CyberNodeLabel" android:text="برنامه‌ها" android:layout_marginStart="10dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/nodeChat"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/cyber_node_green"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/cyber_green"
+            app:strokeWidth="1dp">
+            <LinearLayout android:id="@+id/chatNodeContent" style="@style/CyberNodeContent" android:orientation="horizontal">
+                <TextView style="@style/CyberNodeIcon" android:text="⌁" android:textSize="22sp" />
+                <TextView style="@style/CyberNodeLabel" android:text="چت با سام" android:layout_marginStart="10dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/nodeSettings"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/cyber_node_violet"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/cyber_violet"
+            app:strokeWidth="1dp">
+            <LinearLayout android:id="@+id/settingsNodeContent" style="@style/CyberNodeContent" android:orientation="horizontal">
+                <TextView style="@style/CyberNodeIcon" android:text="⚙" android:textSize="22sp" />
+                <TextView style="@style/CyberNodeLabel" android:text="تنظیمات" android:layout_marginStart="10dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/nodeSystem"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/cyber_node_purple"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/cyber_purple"
+            app:strokeWidth="1dp">
+            <LinearLayout android:id="@+id/systemNodeContent" style="@style/CyberNodeContent" android:orientation="horizontal">
+                <TextView style="@style/CyberNodeIcon" android:text="◈" android:textSize="22sp" />
+                <TextView style="@style/CyberNodeLabel" android:text="وضعیت سیستم" android:layout_marginStart="10dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</ScrollView>

@@ -4,6 +4,8 @@ import android.content.Intent
 import android.content.Context
 import android.app.ActivityManager
 import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -32,10 +34,25 @@ class CyberHubFragment : Fragment() {
                     if (level >= 0) (level * 100 / scale.coerceAtLeast(1)) else -1
                 } ?: -1
             val ram = if (memory.totalMem > 0) ((memory.totalMem - memory.availMem) * 100 / memory.totalMem).toInt() else -1
-            binding.systemHealthText.text = "CPU READY   RAM ${ram.coerceAtLeast(0)}%   BAT ${battery.coerceAtLeast(0)}%"
-            binding.systemHealthCard.postDelayed(this, 3000L)
+            val temperature = readTemperatureCelsius()
+            val connectivity = requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            val networkOnline = connectivity?.activeNetwork?.let { network ->
+                connectivity.getNetworkCapabilities(network)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            } == true
+            binding.healthCpuValue.text = "READY"
+            val ramText = if (ram >= 0) "$ram٪" else "--"
+            val batteryText = if (battery >= 0) "BAT $battery٪" else "BAT --"
+            binding.healthRamValue.text = "$ramText  $batteryText"
+            binding.healthTempValue.text = temperature?.let { "$it°C" } ?: "--°C"
+            binding.healthNetworkValue.text = if (networkOnline) "ONLINE" else "OFFLINE"
+            binding.healthCpuCard.postDelayed(this, 3000L)
         }
     }
+
+    private fun readTemperatureCelsius(): Int? = runCatching {
+        val raw = java.io.File("/sys/class/thermal/thermal_zone0/temp").readText().trim().toInt()
+        if (raw > 1000) raw / 1000 else raw
+    }.getOrNull()?.takeIf { it in -20..100 }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -97,9 +114,27 @@ class CyberHubFragment : Fragment() {
         binding.nodeSettings.setOnClickListener {
             navigateWithPulse(it) { startActivity(Intent(requireContext(), SettingsActivity::class.java)) }
         }
+        binding.optimizeButton.setOnClickListener {
+            navigateWithPulse(it) {
+                startActivity(Intent(requireContext(), AssistantActivity::class.java).apply {
+                    putExtra(AssistantActivity.EXTRA_INITIAL_COMMAND, "برنامه‌های سنگین و کم‌استفاده را بررسی کن")
+                })
+            }
+        }
+        binding.quickGallery.setOnClickListener { launchQuickApp("com.google.android.apps.photos", "گالری") }
+        binding.quickMusic.setOnClickListener { launchQuickApp("com.google.android.apps.youtube.music", "موزیک") }
+        binding.quickMessages.setOnClickListener { launchQuickApp("com.google.android.apps.messaging", "پیام‌ها") }
         binding.settingsButton.setOnClickListener { startActivity(Intent(requireContext(), SettingsActivity::class.java)) }
         binding.languageButton.setOnClickListener { startActivity(Intent(requireContext(), SettingsActivity::class.java)) }
-        binding.systemHealthCard.post(healthTicker)
+        binding.healthCpuCard.post(healthTicker)
+    }
+
+    private fun launchQuickApp(packageName: String, label: String) {
+        val intent = requireContext().packageManager.getLaunchIntentForPackage(packageName)
+        if (intent != null) startActivity(intent)
+        else startActivity(Intent(requireContext(), AssistantActivity::class.java).apply {
+            putExtra(AssistantActivity.EXTRA_INITIAL_COMMAND, "باز کن $label")
+        })
     }
 
     private fun navigateWithPulse(view: View, action: () -> Unit) {
@@ -113,7 +148,7 @@ class CyberHubFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        binding.systemHealthCard.removeCallbacks(healthTicker)
+        binding.healthCpuCard.removeCallbacks(healthTicker)
         _binding = null
         super.onDestroyView()
     }

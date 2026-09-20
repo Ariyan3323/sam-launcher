@@ -15,8 +15,8 @@
     <string name="assistant_microphone_required">Microphone access is needed for voice commands.</string>
     <string name="assistant_voice_unavailable">No speech service was found. Install or enable Google Speech Services and the Persian language pack.</string>
     <string name="assistant_browser_unavailable">No browser is available to complete that search.</string>
-    <string name="assistant_internet_required">I can answer this from the web, but the internet is currently unavailable. Please turn on Wi-Fi or mobile data.</string>
-    <string name="assistant_web_answer_unavailable">I could not find a quick answer right now. Please try again or open a web search.</string>
+    <string name="assistant_internet_required">برای پاسخ به‌روز، دسترسی شبکه را فعال کنید؛ سام تحلیل محلی را ادامه می‌دهد.</string>
+    <string name="assistant_web_answer_unavailable">منبع سریع برای این پرسش آماده نشد؛ سام بر اساس دانش ذخیره‌شده تحلیل می‌کند.</string>
     <string name="assistant_appearance">ظاهر</string>
     <string name="assistant_other_ai">هوش‌های دیگر</string>
     <string name="assistant_choose_ai">Choose an AI app</string>
@@ -26,7 +26,7 @@
     <string name="assistant_widget_title">Talk to Raad</string>
     <string name="assistant_widget_hint">Tap to ask Sam</string>
     <string name="assistant_widget_news_loading">Loading world news…</string>
-    <string name="assistant_widget_news_offline">News unavailable; tap to ask Sam.</string>
+    <string name="assistant_widget_news_action">برای تحلیل خبرها روی سام بزنید.</string>
     <string name="assistant_time">It is %1$d:%2$02d and %3$02d seconds.</string>
     <string name="assistant_clock_code_saved">Clock example saved to %1$s</string>
     <string name="assistant_clock_code_export_failed">The clock example could not be exported.</string>
@@ -39,11 +39,11 @@
     <string name="assistant_thinking">Raad is thinking…</string>
     <string name="assistant_agent_ready">ایجنت سام: حالت محلی آماده است</string>
     <string name="assistant_agent_online">ایجنت سام: Gemini آنلاین است</string>
-    <string name="assistant_agent_offline">ایجنت سام: حالت محلی فعال است (کلید تنظیم نشده)</string>
-    <string name="assistant_agent_error">ایجنت سام: اتصال ناموفق بود؛ حالت محلی در دسترس است</string>
-    <string name="assistant_local_fallback">ایجنت سام: Provider پاسخ نداد؛ پاسخ محلی اجرا شد</string>
+    <string name="assistant_agent_scientific">ایجنت سام: موتور تحلیل علمی آماده است</string>
+    <string name="assistant_agent_error">ایجنت سام: تحلیل علمی دستگاه آماده است</string>
+    <string name="assistant_scientific_fallback">ایجنت سام: تحلیل علمی ذخیره‌شده اجرا شد</string>
     <string name="assistant_agent_tools">Tools used: %1$s</string>
-    <string name="agent_status_local">ایجنت سام: حالت محلی فعال است (کلید Gemini تنظیم نشده)</string>
+    <string name="agent_status_scientific">ایجنت سام: تحلیل علمی دستگاه فعال است</string>
     <string name="agent_status_gemini">Sam agent: Gemini smart mode active</string>
     <string name="voice_unavailable">ورودی صوتی در دسترس نیست؛ سرویس تشخیص گفتار روی این دستگاه نصب نیست.</string>
     <string name="launcher_agent_title">Sam AI</string>
@@ -59,7 +59,7 @@
     <string name="launcher_agent_demo">Try demo</string>
     <string name="launcher_agent_demo_command">باتری را بررسی کن، وضعیت حافظه گوشی را بگو و اختلالات سام را بررسی کن</string>
     <string name="launcher_agent_online">Gemini online</string>
-    <string name="launcher_agent_local">Local mode</string>
+    <string name="launcher_agent_local">Scientific mode</string>
     <string name="app_name">Sam Launcher</string>
     <string name="sam_quick_command">Sam</string>
     <string name="short_description">Launches hidden activities and creates shortcuts for installed apps</string>

@@ -2,6 +2,7 @@ package de.szalkowski.activitylauncher
 
 import androidx.multidex.MultiDexApplication
 import dagger.hilt.android.HiltAndroidApp
+import de.szalkowski.activitylauncher.agent.KnowledgeSyncScheduler
 import de.szalkowski.activitylauncher.services.SettingsService
 import javax.inject.Inject
 
@@ -14,5 +15,6 @@ class ActivityLauncherApp : MultiDexApplication() {
         super.onCreate()
 
         settingsService.init()
+        KnowledgeSyncScheduler.schedule(this)
     }
 }

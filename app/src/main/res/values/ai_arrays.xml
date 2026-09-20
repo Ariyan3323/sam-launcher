@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="ai_mode_entries">
-        <item>Local / offline</item>
+        <item>Scientific memory</item>
         <item>Web knowledge</item>
         <item>Cloud AI</item>
     </string-array>

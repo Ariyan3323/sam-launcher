@@ -8,14 +8,15 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [KnowledgeEntity::class, CaregiverMessageEntity::class, UserProfileEntity::class],
-    version = 3,
+    entities = [KnowledgeEntity::class, CaregiverMessageEntity::class, UserProfileEntity::class, LongTermMemoryEntity::class],
+    version = 4,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun knowledgeDao(): KnowledgeDao
     abstract fun caregiverDao(): CaregiverDao
     abstract fun userProfileDao(): UserProfileDao
+    abstract fun longTermMemoryDao(): LongTermMemoryDao
 
     companion object {
         private const val DATABASE_NAME = "sam_agent_knowledge.db"
@@ -28,7 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java,
                 DATABASE_NAME,
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -59,6 +60,25 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                     """.trimIndent()
                 )
+            }
+        }
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS agent_long_term_memory (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        kind TEXT NOT NULL,
+                        topic TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        source TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_agent_long_term_memory_topic ON agent_long_term_memory(topic)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_agent_long_term_memory_kind ON agent_long_term_memory(kind)")
             }
         }
     }

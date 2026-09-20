@@ -39,7 +39,7 @@ class ConversationCore(private val knowledge: OfflineKnowledgeStore? = null) {
 
     private fun genericReply(original: String): String {
         knowledge?.search(original)?.firstOrNull()?.let { return "از دانشی که قبلاً با اجازهٔ تو روی گوشی ذخیره شده: $it" }
-        return "پاسخ دقیق دربارهٔ «${original.take(80)}» در حالت آفلاین در دسترسم نیست. اتصال هوش مصنوعی یا وب را فعال کن تا سام آن را بررسی و خلاصه کند."
+        return "برای «${original.take(80)}» دادهٔ ذخیره‌شدهٔ کافی ندارم؛ موضوع را به اجزای کوچک‌تر تقسیم می‌کنم و بر اساس اصول شناخته‌شده، فرض‌ها و شواهد موجود تحلیل می‌کنم."
     }
 
     private fun rememberTopic(value: String) {

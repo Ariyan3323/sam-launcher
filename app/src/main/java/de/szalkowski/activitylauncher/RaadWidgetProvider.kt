@@ -32,7 +32,7 @@ class RaadWidgetProvider : AppWidgetProvider() {
                 }.getOrNull()
                 val views = RemoteViews(context.packageName, R.layout.widget_raad)
                 views.setOnClickPendingIntent(R.id.widgetRoot, openAssistant)
-                views.setTextViewText(R.id.widgetNews, headline?.let { "خبر تازه: $it" } ?: context.getString(R.string.assistant_widget_news_offline))
+                views.setTextViewText(R.id.widgetNews, headline?.let { "خبر تازه: $it" } ?: context.getString(R.string.assistant_widget_news_action))
                 manager.updateAppWidget(id, views)
             }.start()
         }

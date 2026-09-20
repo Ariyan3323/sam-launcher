@@ -20,6 +20,7 @@ android {
         versionName = "2.2.9"
         buildConfigField("String", "GEMINI_API_KEY", "\"${System.getenv("GEMINI_API_KEY") ?: ""}\"")
         buildConfigField("String", "OPENAI_API_KEY", "\"${System.getenv("OPENAI_API_KEY") ?: ""}\"")
+        buildConfigField("String", "SAM_KNOWLEDGE_FEED_URL", "\"${System.getenv("SAM_KNOWLEDGE_FEED_URL") ?: ""}\"")
 
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -117,6 +118,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.17.2")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("com.google.dagger:hilt-android:2.50")
     "playStoreImplementation"("com.google.android.play:review-ktx:2.0.2")

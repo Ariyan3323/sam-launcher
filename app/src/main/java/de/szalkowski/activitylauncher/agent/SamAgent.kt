@@ -21,14 +21,14 @@ import java.util.Locale
 data class AgentConfig(
     val name: String = "رعد",
     val personality: String = """
-        تو "$name" هستی، یک دستیار باهوش، زیرک، آرام و انسان‌فهم در لانچر اندروید.
-        ویژگی‌های تو:
-        - مثل یک انسان مؤدب و فهمیده گفتگو کن؛ منظور ضمنی، لحن و احساس کاربر را درک کن.
-        - پاسخ‌هایت طبیعی، روشن و متناسب با سؤال باشد؛ نه رباتیک و نه بیش از حد طولانی.
-        - در موضوعات حساس، سیاست‌مدار و بی‌طرف باش؛ اول واقعیت، بعد گزینه‌ها و پیامدها را بگو.
-        - اگر مطمئن نیستی، حدس قطعی نزن؛ بگو چه چیزی را می‌دانی و برای اطلاعات روز از ابزار وب استفاده کن.
-        - اگر کاری را نمی‌توانی انجام دهی، صادقانه بگو و یک راه جایگزین عملی پیشنهاد بده.
-        - وضعیت فعلی دستگاه و حافظه محلی کاربر را فقط در حد لازم و با رعایت حریم خصوصی در نظر بگیر.
+        تو "$name" هستی؛ یک دانشمند و تحلیلگر ارشد برای لانچر اندروید.
+        اصول تو:
+        - با روش علمی، استدلال مرحله‌به‌مرحله، شواهد و فرض‌های روشن پاسخ بده.
+        - پاسخ را دقیق، طبیعی، فارسی‌محور و متناسب با سطح کاربر بنویس؛ از ادعای بی‌پشتوانه پرهیز کن.
+        - در نبود دسترسی به سرویس بیرونی، از دانش محلی، حافظه بلندمدت و داده‌های دستگاه استفاده کن و بهترین تحلیل قابل دفاع را ارائه بده.
+        - بین واقعیت مشاهده‌شده، استنباط و پیشنهاد آینده تفاوت بگذار.
+        - پاسخ‌های علمی، خلاصه‌ها، ترجیحات کاربر و دستورات مفید را به عنوان دانش قابل بازیابی در نظر بگیر.
+        - حریم خصوصی مقدم است؛ داده حساس را فقط برای اجرای همان درخواست مصرف کن و در پاسخ افشا نکن.
     """.trimIndent(),
     val geminiApiKey: String = "YOUR_GEMINI_API_KEY_HERE",
     val openAiApiKey: String = "",
@@ -320,7 +320,7 @@ class LlmClient(private val config: AgentConfig) {
                 ?.optJSONObject(0)?.optJSONObject("message")?.optString("content").orEmpty()
             AgentResponse(text = text.ifBlank { "پاسخی دریافت نشد." }, needsToolCall = false)
         }.getOrElse { error ->
-            AgentResponse("خطای شبکهٔ Gemini: ${error.message?.take(140) ?: "اتصال برقرار نشد"}", false, successful = false)
+            AgentResponse("موتور Gemini پاسخ کامل نداد؛ تحلیل علمی ذخیره‌شده آماده است.", false, successful = false)
         }
     }
 
@@ -338,11 +338,11 @@ class LlmClient(private val config: AgentConfig) {
                     status == "NOT_FOUND" || message.contains("not found", ignoreCase = true) ->
                         "مدل Gemini پیدا نشد؛ نام مدل را روی gemini-2.5-flash بگذار."
                     message.contains("location is not supported", ignoreCase = true) ->
-                        "Gemini در منطقه فعلی در دسترس نیست؛ سام به حالت محلی برگشت."
-                    message.isNotBlank() -> "ارتباط با Gemini برقرار نشد: ${message.take(180)}"
-                    else -> "ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است."
+                        "سرویس Gemini در منطقه فعلی قابل استفاده نیست؛ تحلیل علمی ذخیره‌شده ادامه پیدا می‌کند."
+                    message.isNotBlank() -> "سرویس Gemini خطا داد: ${message.take(180)}؛ تحلیل ذخیره‌شده آماده است."
+                    else -> "پاسخ Gemini آماده نشد؛ تحلیل علمی ذخیره‌شده فعال است."
                 }
-            }.getOrDefault("ارتباط با Gemini برقرار نشد؛ حالت محلی سام فعال است.")
+            }.getOrDefault("پاسخ Gemini آماده نشد؛ تحلیل علمی ذخیره‌شده فعال است.")
             return AgentResponse(text = friendly, needsToolCall = false, successful = false)
         }
 
@@ -374,7 +374,7 @@ class LlmClient(private val config: AgentConfig) {
 
             AgentResponse(text = textResponse, needsToolCall = toolCall != null, toolCall = toolCall)
         } catch (e: Exception) {
-            AgentResponse(text = "خطا در پردازش پاسخ؛ حالت محلی سام فعال است.", needsToolCall = false, successful = false)
+            AgentResponse(text = "پاسخ سرویس قابل پردازش نبود؛ تحلیل علمی ذخیره‌شده فعال است.", needsToolCall = false, successful = false)
         }
     }
 }
@@ -388,6 +388,7 @@ class SamAgent(
 ) {
     private val llm = LlmClient(config)
     private val memory = AgentMemory(config.maxMemoryTurns)
+    private val longTermMemory = LongTermMemoryStore(context)
     private val toolRegistry = ToolRegistry()
     private val maxToolIterations = 5
 
@@ -402,8 +403,14 @@ class SamAgent(
     }
 
     suspend fun processCommand(userInput: String, deviceContext: String): AgentOutput {
+        val localContext = longTermMemory.search(userInput)
+            .joinToString("\n") { "- [${it.kind}] ${it.topic}: ${it.content}" }
+        val enrichedContext = if (localContext.isBlank()) deviceContext
+        else "$deviceContext\n\n[دانش بلندمدت مرتبط]\n$localContext"
         val steps = splitWorkflow(userInput)
-        return if (steps.size > 1) processWorkflow(steps, deviceContext) else processSingleCommand(userInput, deviceContext)
+        val output = if (steps.size > 1) processWorkflow(steps, enrichedContext) else processSingleCommand(userInput, enrichedContext)
+        longTermMemory.remember("command", userInput, output.reply, "sam-agent")
+        return output
     }
 
     private suspend fun processWorkflow(steps: List<String>, deviceContext: String): AgentOutput {

@@ -220,7 +220,7 @@
                         android:src="@drawable/ic_dashboard_network"
                         android:tint="@color/cyber_green" />
                     <TextView android:text="NETWORK" style="@style/CyberHealthLabel" />
-                    <TextView android:id="@+id/healthNetworkValue" android:text="OFFLINE" style="@style/CyberHealthValue" />
+                    <TextView android:id="@+id/healthNetworkValue" android:text="NO SIGNAL" style="@style/CyberHealthValue" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </GridLayout>

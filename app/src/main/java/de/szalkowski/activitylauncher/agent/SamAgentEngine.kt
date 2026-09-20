@@ -16,6 +16,7 @@ import de.szalkowski.activitylauncher.agent.tools.WebSearchTool
 class SamAgentEngine(private val context: Context) {
     private val webSearchTool = WebSearchTool()
     private val knowledgeDao: KnowledgeDao = AgentDatabase.get(context).knowledgeDao()
+    private val longTermMemory = LongTermMemoryStore(context)
 
     suspend fun processQuery(userQuery: String, allowWeb: Boolean): EngineResponse {
         val query = userQuery.trim()
@@ -24,14 +25,18 @@ class SamAgentEngine(private val context: Context) {
             return EngineResponse.Action("OPEN_SETTINGS")
         }
 
+        longTermMemory.search(query, 3).firstOrNull()?.let {
+            return EngineResponse.Text("دانش ذخیره‌شده: ${it.content}")
+        }
         knowledgeDao.findKnowledge(query)?.takeIf { it.isNotBlank() }?.let {
-            return EngineResponse.Text("دانش آفلاین: $it")
+            return EngineResponse.Text("دانش ذخیره‌شده: $it")
         }
         if (!allowWeb || !hasValidatedInternet()) return EngineResponse.Text("")
 
         val fetched = webSearchTool.searchWeb(query)
         if (fetched.isNotBlank() && !fetched.contains("انجام نشد")) {
             knowledgeDao.saveKnowledge(KnowledgeEntity(topic = query, content = fetched))
+            longTermMemory.remember("web_summary", query, fetched, "web-search")
         }
         return EngineResponse.Text(fetched)
     }

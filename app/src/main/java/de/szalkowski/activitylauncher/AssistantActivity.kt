@@ -515,7 +515,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                             // Cloud failure must never leave the user without an answer.
                             // Keep the failure in the status line, then execute the same
                             // command through deterministic local routing/conversation.
-                            binding.agentStatus.text = getString(R.string.assistant_local_fallback)
+                            binding.agentStatus.text = getString(R.string.assistant_scientific_fallback)
                             runLocalCommand(rawCommand)
                             binding.bubble.setState(AssistantBubbleView.State.READY)
                             return@withContext
@@ -570,7 +570,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             success == true -> getString(R.string.agent_status_gemini)
             hasConfiguredAiProvider() && provider == "openai" -> getString(R.string.agent_status_openai_ready)
             hasConfiguredAiProvider() && provider == "custom" -> getString(R.string.agent_status_custom_ready)
-            else -> getString(R.string.agent_status_local)
+            else -> getString(R.string.agent_status_scientific)
         }
     }
 
@@ -774,7 +774,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun offlineConversationReply(question: String): String =
-        "پاسخ دقیق دربارهٔ «${question.take(80)}» در حالت آفلاین در دسترسم نیست. اتصال هوش مصنوعی یا وب را فعال کن تا سام آن را بررسی و خلاصه کند."
+        "برای «${question.take(80)}» دادهٔ ذخیره‌شدهٔ کافی ندارم؛ سام بر پایهٔ اصول شناخته‌شده، فرض‌ها و شواهد موجود تحلیل می‌کند."
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()
@@ -1249,7 +1249,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun localDeviceSummary(): String {
         val now = Calendar.getInstance()
         val time = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
-        return "وضعیت دستگاه: باتری ${batteryLevel}٪؛ ساعت $time؛ اندروید ${android.os.Build.VERSION.RELEASE}؛ حالت محلی فعال است."
+        return "وضعیت دستگاه: باتری ${batteryLevel}٪؛ ساعت $time؛ اندروید ${android.os.Build.VERSION.RELEASE}؛ موتور تحلیل علمی فعال است."
     }
 
     private fun currentTime(): String {

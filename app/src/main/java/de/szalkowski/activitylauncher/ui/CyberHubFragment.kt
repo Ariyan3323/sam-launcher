@@ -44,7 +44,7 @@ class CyberHubFragment : Fragment() {
             val batteryText = if (battery >= 0) "BAT $battery٪" else "BAT --"
             binding.healthRamValue.text = "$ramText  $batteryText"
             binding.healthTempValue.text = temperature?.let { "$it°C" } ?: "--°C"
-            binding.healthNetworkValue.text = if (networkOnline) "ONLINE" else "OFFLINE"
+            binding.healthNetworkValue.text = if (networkOnline) "ONLINE" else "NO SIGNAL"
             binding.healthCpuCard.postDelayed(this, 3000L)
         }
     }
@@ -68,7 +68,7 @@ class CyberHubFragment : Fragment() {
         val online = BuildConfig.GEMINI_API_KEY.isNotBlank() || BuildConfig.OPENAI_API_KEY.isNotBlank()
         binding.statusText.text = if (online) "سام // آنلاین" else "سام // حالت محلی"
         binding.statusDot.setTextColor(requireContext().getColor(if (online) R.color.cyber_green else R.color.cyber_purple))
-        binding.avatarState.text = if (online) "ONLINE" else "LOCAL"
+        binding.avatarState.text = if (online) "ONLINE" else "SCIENCE"
         binding.avatarState.setTextColor(requireContext().getColor(if (online) R.color.cyber_green else R.color.cyber_purple))
 
         listOf(binding.nodeChat, binding.nodeApps, binding.nodeSystem, binding.nodeSettings).forEachIndexed { index, node ->

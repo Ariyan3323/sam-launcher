@@ -15,8 +15,8 @@
     <string name="assistant_microphone_required">برای فرمان صوتی، دسترسی میکروفون لازم است.</string>
     <string name="assistant_voice_unavailable">سرویس تشخیص صدا پیدا نشد. لطفاً Google Speech Services و زبان فارسی را نصب یا فعال کنید.</string>
     <string name="assistant_browser_unavailable">مرورگری برای انجام این جست‌وجو در دسترس نیست.</string>
-    <string name="assistant_internet_required">برای پاسخ به این سؤال باید از وب کمک بگیرم، اما اینترنت خاموش یا قطع است. لطفاً وای‌فای یا دادهٔ همراه را روشن کنید.</string>
-    <string name="assistant_web_answer_unavailable">فعلاً پاسخ سریع پیدا نشد. دوباره امتحان کنید یا جست‌وجوی وب را باز کنید.</string>
+    <string name="assistant_internet_required">برای پاسخ به‌روز، دسترسی شبکه را فعال کنید؛ سام تحلیل محلی را ادامه می‌دهد.</string>
+    <string name="assistant_web_answer_unavailable">منبع سریع برای این پرسش آماده نشد؛ سام بر اساس دانش ذخیره‌شده تحلیل می‌کند.</string>
     <string name="assistant_appearance">ظاهر</string>
     <string name="assistant_other_ai">هوش‌های دیگر</string>
     <string name="assistant_choose_ai">انتخاب برنامهٔ هوش مصنوعی</string>
@@ -26,7 +26,7 @@
     <string name="assistant_widget_title">گفت‌وگو با سام</string>
     <string name="assistant_widget_hint">با سام صحبت کن</string>
     <string name="assistant_widget_news_loading">در حال دریافت خبرهای جهان…</string>
-    <string name="assistant_widget_news_offline">خبر زنده در دسترس نیست؛ از سام بپرسید.</string>
+    <string name="assistant_widget_news_action">برای تحلیل خبرها از سام بپرسید.</string>
     <string name="assistant_time">ساعت %1$d و %2$02d دقیقه و %3$02d ثانیه است.</string>
     <string name="assistant_clock_code_saved">نمونه‌کد ساعت در %1$s ذخیره شد.</string>
     <string name="assistant_clock_code_export_failed">نمونه‌کد ساعت ذخیره نشد.</string>
@@ -39,11 +39,11 @@
     <string name="assistant_thinking">سام در حال فکر کردن است…</string>
     <string name="assistant_agent_ready">ایجنت سام: حالت محلی آماده است</string>
     <string name="assistant_agent_online">ایجنت سام: Gemini آنلاین است</string>
-    <string name="assistant_agent_offline">ایجنت سام: حالت محلی فعال است (کلید تنظیم نشده)</string>
-    <string name="assistant_agent_error">ایجنت سام: اتصال ناموفق بود؛ حالت محلی در دسترس است</string>
-    <string name="assistant_local_fallback">ایجنت سام: سرویس پاسخ نداد؛ پاسخ محلی اجرا شد</string>
+    <string name="assistant_agent_scientific">ایجنت سام: موتور تحلیل علمی آماده است</string>
+    <string name="assistant_agent_error">ایجنت سام: تحلیل علمی دستگاه آماده است</string>
+    <string name="assistant_scientific_fallback">ایجنت سام: تحلیل علمی ذخیره‌شده اجرا شد</string>
     <string name="assistant_agent_tools">ابزارهای استفاده‌شده: %1$s</string>
-    <string name="agent_status_local">ایجنت سام: حالت محلی فعال است</string>
+    <string name="agent_status_scientific">ایجنت سام: تحلیل علمی دستگاه فعال است</string>
     <string name="agent_status_gemini">ایجنت سام: حالت هوشمند Gemini فعال</string>
     <string name="agent_status_openai">ایجنت سام: حالت هوشمند OpenAI فعال</string>
     <string name="agent_status_custom">ایجنت سام: سرویس هوش مصنوعی سفارشی فعال</string>
@@ -51,7 +51,7 @@
     <string name="agent_status_custom_ready">ایجنت سام: سرویس سفارشی تنظیم شده است</string>
     <string name="voice_unavailable">ورودی صوتی در دسترس نیست؛ سرویس تشخیص گفتار روی این دستگاه نصب نیست.</string>
     <string name="launcher_agent_title">هوش مصنوعی سام</string>
-    <string name="launcher_agent_subtitle">همراه هوشمند و محلی لانچر شما</string>
+    <string name="launcher_agent_subtitle">همراه هوشمند و علمی لانچر شما</string>
     <string name="launcher_agent_ready">آماده</string>
     <string name="launcher_agent_hint">هر چیزی از سام بپرسید…</string>
     <string name="launcher_agent_ask">پرسش</string>
@@ -62,6 +62,6 @@
     <string name="launcher_agent_demo">اجرای نمونه</string>
     <string name="launcher_agent_demo_command">باتری را بررسی کن، وضعیت حافظه گوشی را بگو و اختلالات سام را بررسی کن</string>
     <string name="launcher_agent_online">Gemini آنلاین</string>
-    <string name="launcher_agent_local">حالت محلی</string>
+    <string name="launcher_agent_local">حالت علمی</string>
     <string name="ai_settings_button">تنظیمات هوش مصنوعی</string>
 </resources>

@@ -165,8 +165,7 @@ class AgentMemory(private val maxTurns: Int) {
     fun clear() { history.clear() }
 
     private fun trim() {
-        val userCount = history.count { it.role == "user" }
-        while (userCount > maxTurns && history.size > 2) {
+        while (history.count { it.role == "user" } > maxTurns && history.size > 2) {
             val firstUser = history.indexOfFirst { it.role == "user" }
             if (firstUser >= 0) {
                 history.removeAt(firstUser)
@@ -472,7 +471,12 @@ class SamAgent(
                     break
                 }
 
-                val toolCall = response.toolCall!!
+                val toolCall = response.toolCall ?: return AgentOutput(
+                    reply = "مدل درخواست ابزار را ناقص برگرداند؛ لطفاً دوباره تلاش کنید.",
+                    executedTools = executedTools.distinct(),
+                    responseTimeMs = System.currentTimeMillis() - startTime,
+                    success = false
+                )
                 val toolResult = toolRegistry.executeTool(toolCall.name, toolCall.args)
 
                 if (toolResult != null) {

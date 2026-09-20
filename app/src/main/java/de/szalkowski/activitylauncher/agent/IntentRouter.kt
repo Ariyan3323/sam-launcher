@@ -7,7 +7,10 @@ enum class SamIntentType {
     SEARCH_WEB,
     READ_LATEST_NOTIFICATION,
     CHECK_DEVICE,
-    COMPOSE_MESSAGE
+    COMPOSE_MESSAGE,
+    TOGGLE_FLASHLIGHT,
+    OPEN_WIFI_SETTINGS,
+    OPEN_BLUETOOTH_SETTINGS
 }
 
 data class SamIntent(
@@ -41,6 +44,20 @@ object IntentRouter {
 
         if (containsAny(command, "جستجو", "سرچ", "در وب", "در اینترنت", "search", "look up")) {
             return SamIntent(SamIntentType.SEARCH_WEB, target = extractAfterSearch(command))
+        }
+        if (containsAny(command, "چراغ قوه", "چراغقوه", "فلش", "flashlight", "torch")) {
+            val state = when {
+                containsAny(command, "خاموش", "off", "ببند") -> "off"
+                containsAny(command, "روشن", "on", "باز") -> "on"
+                else -> "toggle"
+            }
+            return SamIntent(SamIntentType.TOGGLE_FLASHLIGHT, target = state)
+        }
+        if (containsAny(command, "وای فای", "وای‌فای", "wifi", "wi fi")) {
+            return SamIntent(SamIntentType.OPEN_WIFI_SETTINGS)
+        }
+        if (containsAny(command, "بلوتوث", "bluetooth")) {
+            return SamIntent(SamIntentType.OPEN_BLUETOOTH_SETTINGS)
         }
         if (containsAny(command, "پیام بده", "پیام بفرست", "ارسال کن", "send message", "compose email")) {
             return SamIntent(SamIntentType.COMPOSE_MESSAGE, target = input.trim(), requiresConfirmation = true)

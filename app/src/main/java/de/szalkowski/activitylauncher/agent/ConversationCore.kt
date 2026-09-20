@@ -25,6 +25,8 @@ class ConversationCore(private val knowledge: OfflineKnowledgeStore? = null) {
                 "حتماً. من کنارتم؛ دوست داری دربارهٔ حال امروزت، کارهایت، یادگیری یا یک موضوع آزاد صحبت کنیم؟"
             containsAny(text, "انبردست چیست", "انبردست چیه", "what is pliers") ->
                 "انبردست یک ابزار دستی برای گرفتن، نگه‌داشتن، خم‌کردن و گاهی بریدن سیم و قطعات است. شکل فک آن تعیین می‌کند برای چه کاری مناسب‌تر باشد."
+            containsAny(text, "انیشتین کی بود", "آلبرت انیشتین", "einstein") ->
+                "آلبرت اینشتین فیزیک‌دان نظری آلمانی‌تبار بود که با نظریهٔ نسبیت و توضیح اثر فوتوالکتریک شناخته می‌شود و در سال ۱۹۲۱ نوبل فیزیک گرفت."
             containsAny(text, "تو کی هستی", "اسمت چیه", "who are you") ->
                 "من سام هستم؛ یک دستیار فارسی‌محور که می‌تواند با تو گفتگو کند، برنامه‌ها را پیدا کند و با اجازه‌ات کارهای گوشی را انجام دهد."
             containsAny(text, "ممنون", "مرسی", "thank you", "thanks") ->
@@ -37,7 +39,7 @@ class ConversationCore(private val knowledge: OfflineKnowledgeStore? = null) {
 
     private fun genericReply(original: String): String {
         knowledge?.search(original)?.firstOrNull()?.let { return "از دانشی که قبلاً با اجازهٔ تو روی گوشی ذخیره شده: $it" }
-        return "درخواستت را در حافظهٔ محلی پیدا نکردم. اگر مدل هوش مصنوعی یا وب فعال باشد، آن را برای پاسخ کامل بررسی می‌کنم."
+        return "پاسخ دقیق دربارهٔ «${original.take(80)}» در حالت آفلاین در دسترسم نیست. اتصال هوش مصنوعی یا وب را فعال کن تا سام آن را بررسی و خلاصه کند."
     }
 
     private fun rememberTopic(value: String) {

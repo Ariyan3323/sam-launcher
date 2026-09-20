@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -73,6 +74,7 @@ import java.util.Locale
 class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     companion object {
         const val EXTRA_INITIAL_COMMAND = "de.szalkowski.activitylauncher.extra.INITIAL_COMMAND"
+        private const val FLASHLIGHT_PERMISSION_REQUEST = 4107
     }
 
     private lateinit var binding: ActivityAssistantBinding
@@ -592,6 +594,14 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun runLocalCommand(rawCommand: String) {
         val command = rawCommand.trim().lowercase(Locale.ROOT)
         when {
+            command.contains("چراغ قوه") || command.contains("چراغقوه") ||
+                command.contains("فلش گوشی") || command.contains("flashlight") || command.contains("torch") ->
+                toggleFlashlight(command)
+            command.contains("وای فای") || command.contains("وای‌فای") ||
+                command.contains("wifi") || command.contains("wi-fi") ->
+                openSystemSettings(Settings.ACTION_WIFI_SETTINGS, "تنظیمات وای‌فای")
+            command.contains("بلوتوث") || command.contains("bluetooth") ->
+                openSystemSettings(Settings.ACTION_BLUETOOTH_SETTINGS, "تنظیمات بلوتوث")
             command.contains("هوش‌های دیگر") || command.contains("هوش های دیگر") ||
                 command.contains("از هوش‌های دیگر") || command.contains("از هوش های دیگر") ||
                 command.contains("share ai") -> shareWithOtherAi(extractSharedQuestion(rawCommand))
@@ -689,6 +699,42 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun toggleFlashlight(command: String) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+            respond("کنترل چراغ‌قوه در این نسخهٔ اندروید پشتیبانی نمی‌شود.")
+            return
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), FLASHLIGHT_PERMISSION_REQUEST)
+            respond("برای کنترل چراغ‌قوه، اجازهٔ دوربین را تأیید کن و دوباره فرمان را بگو.")
+            return
+        }
+        val preferences = getSharedPreferences("sam_preferences", MODE_PRIVATE)
+        val previous = preferences.getBoolean("flashlight_on", false)
+        val target = when {
+            command.contains("خاموش") || command.contains("off") -> false
+            command.contains("روشن") || command.contains("on") -> true
+            else -> !previous
+        }
+        val result = runCatching {
+            val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+            val cameraId = cameraManager.cameraIdList.firstOrNull() ?: error("camera_not_found")
+            cameraManager.setTorchMode(cameraId, target)
+            preferences.edit().putBoolean("flashlight_on", target).apply()
+        }
+        respond(if (result.isSuccess) {
+            if (target) "چراغ‌قوه روشن شد." else "چراغ‌قوه خاموش شد."
+        } else {
+            "نتوانستم چراغ‌قوه را تغییر بدهم؛ ممکن است دوربین در حال استفاده باشد."
+        })
+    }
+
+    private fun openSystemSettings(action: String, title: String) {
+        runCatching { startActivity(Intent(action)) }
+            .onSuccess { respond("$title باز شد.") }
+            .onFailure { respond("باز کردن $title ممکن نبود؛ از تنظیمات گوشی وارد شو.") }
+    }
+
     private fun shouldUseWebForQuestion(rawCommand: String): Boolean {
         val command = rawCommand.trim().lowercase(Locale.ROOT)
         return command.contains("جستجو") || command.contains("سرچ") || command.contains("در وب") ||
@@ -728,7 +774,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun offlineConversationReply(question: String): String =
-        "پاسخ محلی برای «${question.take(80)}» پیدا نشد. سؤال را کوتاه‌تر بپرس یا اتصال اینترنت را فعال کن."
+        "پاسخ دقیق دربارهٔ «${question.take(80)}» در حالت آفلاین در دسترسم نیست. اتصال هوش مصنوعی یا وب را فعال کن تا سام آن را بررسی و خلاصه کند."
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()

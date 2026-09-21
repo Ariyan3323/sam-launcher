@@ -474,16 +474,22 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun isDeterministicPhoneCommand(rawCommand: String): Boolean {
-        val command = rawCommand.lowercase(Locale.ROOT)
+        val command = rawCommand.normalizeUserText()
         return listOf(
             "باتری", "battery", "ساعت", "time", "تنظیمات", "settings", "وضعیت", "خلاصه",
+            "چراغ قوه", "چراغقوه", "چراغ", "فلش", "فلش گوشی", "flashlight", "torch",
+            "روشنایی", "نور صفحه", "روشن‌تر", "روشن تر", "تاریک‌تر", "تاریک تر", "brightness",
+            "صدای گوشی", "کم کردن صدا", "کم کن صدا", "زیاد کردن صدا", "زیاد کن صدا", "ولوم", "volume", "صدا را", "صدا رو",
+            "نوتیفیکیشن", "نوتیف", "اعلان", "خواندن اعلان", "خواندن نوتیفیکیشن", "بخوان اعلان",
+            "آلارم", "alarm", "زنگ هشدار", "تنظیم ساعت", "تنظیم تاریخ", "تاریخ",
+            "بررسی برنامه", "بررسی اپ", "کش برنامه", "پاک کردن کش", "دمای گوشی", "دمای دستگاه", "مصرف باتری",
             "باز کن", "open ", "تماس بگیر", "call ", "پیامک", "sms", "ایمیل", "email", "جیمیل", "gmail",
             "جستجو", "search", "در وب", "در اینترنت",
             "پیدا کن", "یافتن برنامه", "برنامه مناسب", "find app", "find my", "locate app",
             "آخرین پیام", "آخرینپیام", "آخرین اعلان", "بخوان", "read message", "last message", "latest message", "latest sms", "علایق من", "چی دوست دارم",
             "هوش مصنوعی گوشی", "دستیار گوشی", "ask another ai", "other ai",
             "هوش‌های دیگر", "هوش های دیگر", "از هوش‌های دیگر", "از هوش های دیگر", "share ai",
-            "سلام", "درود", "hello", "hi", "پیامنگار", "پیام نگار", "پیام‌رسان", "پیام رسان", "اس ام اس", "پیام بده",
+            "پیامنگار", "پیام نگار", "پیام‌رسان", "پیام رسان", "اس ام اس", "پیام بده",
             "پیام بفرست", "تلگرام", "برو تل", "زنگ بزن",
             "چه خبر", "چخبر", "چهخبر", "اخبار جهان", "خبرهای امروز", "اخبار مهم", "world news", "latest news",
             "سیاست", "ترید", "رمز ارز", "ارز دیجیتال", "درس", "اخبار روز",
@@ -660,6 +666,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 command.contains("اعلان") || command.contains("نوتیف") ||
                 command.contains("پیام تلگرام") || command.contains("پیام‌های تلگرام")) &&
                 (command.contains("تلگرام") || command.contains("telegram")) -> requestLatestTelegramNotification()
+            (command.contains("اعلان") || command.contains("نوتیفیکیشن") || command.contains("نوتیف")) &&
+                (command.contains("خواندن") || command.contains("بخوان") || command.contains("نمایش") || command.contains("آخرین")) ->
+                requestLatestNotification("اعلان", emptyList())
             command.contains("آخرین پیام") || command.contains("آخرینپیام") ||
                 command.contains("آخرین اس ام اس") || command.contains("آخریناس ام اس") ||
                 command.contains("last message") || command.contains("latest sms") ->
@@ -673,6 +682,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("اس ام اس") || command.contains("پیام بده") || command.contains("پیام بفرست") -> prepareSms(rawCommand)
             command.contains("زنگ بزن") -> prepareCall(rawCommand)
             command.contains("تنظیمات") || command.contains("settings") -> openSettings()
+            command.contains("آلارم") || command.contains("alarm") || command.contains("زنگ هشدار") ->
+                openSystemSettings(Settings.ACTION_ALARM_SETTINGS, "تنظیمات آلارم")
+            command.contains("تنظیم ساعت") || command.contains("تنظیم تاریخ") || command.contains("تاریخ") ->
+                openSystemSettings(Settings.ACTION_DATE_SETTINGS, "تنظیمات تاریخ و ساعت")
             (command.contains("موزیک") || command.contains("موسیقی") || command.contains("آهنگ") ||
                 command.contains("music") || command.contains("song")) &&
                 (command.contains("پخش") || command.contains("اجرا") || command.contains("play") ||
@@ -682,7 +695,9 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("حافظه گوشی") || command.contains("حافظه دستگاه") ||
                 command.contains("storage") || command.contains("memory status") -> respond(storageSummary())
             command.contains("اختلال") || command.contains("عیب یابی") || command.contains("عیب‌یابی") ||
-                command.contains("عیبیابی") || command.contains("diagnostic") || command.contains("check sam") -> runDiagnostics()
+                command.contains("عیبیابی") || command.contains("diagnostic") || command.contains("check sam") ||
+                command.contains("بررسی برنامه") || command.contains("بررسی اپ") || command.contains("دمای گوشی") ||
+                command.contains("دمای دستگاه") || command.contains("مصرف باتری") -> runDiagnostics()
             command.startsWith("open ") -> openApp(rawCommand.removePrefixIgnoreCase("open ").trim())
             command.startsWith("open") || command.startsWith("launch") || command.startsWith("run ") ||
                 command.contains("اجرا کن") || command.contains("راه‌اندازی کن") || command.contains("راه اندازی کن") ->

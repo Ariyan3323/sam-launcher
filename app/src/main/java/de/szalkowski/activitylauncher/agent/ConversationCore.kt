@@ -39,7 +39,7 @@ class ConversationCore(private val knowledge: OfflineKnowledgeStore? = null) {
 
     private fun genericReply(original: String): String {
         knowledge?.search(original)?.firstOrNull()?.let { return "یادم هست: $it" }
-        return "در حالت آفلاین هم کنارت هستم. دربارهٔ «${original.take(80)}» بگو دنبال توضیح، مقایسه یا انجام یک کار هستی تا از همین‌جا شروع کنیم."
+        return "دربارهٔ «${original.take(80)}» بگو دنبال توضیح، مقایسه یا انجام یک کار هستی تا از همین‌جا شروع کنیم."
     }
 
     private fun rememberTopic(value: String) {

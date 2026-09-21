@@ -50,6 +50,7 @@ import de.szalkowski.activitylauncher.agent.ConversationCore
 import de.szalkowski.activitylauncher.agent.OfflineKnowledgeStore
 import de.szalkowski.activitylauncher.agent.SamAgentEngine
 import de.szalkowski.activitylauncher.agent.EngineResponse
+import de.szalkowski.activitylauncher.agent.OnlineConversationClient
 import de.szalkowski.activitylauncher.agent.CaregiverConversationViewModel
 import de.szalkowski.activitylauncher.agent.data.AppDatabase
 import de.szalkowski.activitylauncher.agent.data.UserProfileRepository
@@ -394,6 +395,11 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             return
         }
         val selectedMode = SecureAiSettings(this).getMode()
+        if (!isDeterministicPhoneCommand(rawCommand) && isNetworkAvailable() && !hasConfiguredAiProvider()) {
+            updateAgentStatus()
+            runOnlineConversationCommand(rawCommand)
+            return
+        }
         // Natural language must reach the configured Agent/LLM; only explicit phone
         // actions are handled by the deterministic local router.
         if (!isDeterministicPhoneCommand(rawCommand) && hasConfiguredAiProvider()) {
@@ -529,6 +535,23 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         }
                         respond(if (usedFallback) "[پاسخ از Provider جایگزین]\n$reply" else reply)
                         binding.bubble.setState(AssistantBubbleView.State.READY)
+            }
+        }
+    }
+
+    private fun runOnlineConversationCommand(rawCommand: String) {
+        composeMascotState = MascotState.Thinking
+        binding.bubble.setState(AssistantBubbleView.State.THINKING)
+        binding.agentStatus.setText(R.string.assistant_thinking)
+        respond(getString(R.string.assistant_thinking), speak = false)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val answer = OnlineConversationClient().answer(rawCommand)
+            withContext(Dispatchers.Main) {
+                val reply = answer ?: offlineConversationReply(rawCommand)
+                binding.bubble.setState(AssistantBubbleView.State.READY)
+                composeMascotState = MascotState.Speaking
+                updateAgentStatus(answer != null)
+                respond(reply)
             }
         }
     }

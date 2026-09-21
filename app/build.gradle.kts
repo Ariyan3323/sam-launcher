@@ -16,8 +16,8 @@ android {
         applicationId = "com.fgmembers.samlauncher"
         minSdk = 21
         targetSdk = 36
-        versionCode = 77
-        versionName = "2.2.16"
+        versionCode = 78
+        versionName = "2.2.17"
         buildConfigField("String", "GEMINI_API_KEY", "\"${System.getenv("GEMINI_API_KEY") ?: ""}\"")
         buildConfigField("String", "OPENAI_API_KEY", "\"${System.getenv("OPENAI_API_KEY") ?: ""}\"")
         buildConfigField("String", "SAM_KNOWLEDGE_FEED_URL", "\"${System.getenv("SAM_KNOWLEDGE_FEED_URL") ?: ""}\"")
@@ -120,9 +120,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("com.google.dagger:hilt-android:2.50")
+    implementation("com.google.dagger:hilt-android:2.48")
     "playStoreImplementation"("com.google.android.play:review-ktx:2.0.2")
-    kapt("com.google.dagger:hilt-compiler:2.50")
+    kapt("com.google.dagger:hilt-compiler:2.48")
     kapt("androidx.room:room-compiler:2.6.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.13")

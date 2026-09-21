@@ -38,8 +38,8 @@ class ConversationCore(private val knowledge: OfflineKnowledgeStore? = null) {
     fun contextSummary(): String = recentTopics.joinToString(" | ")
 
     private fun genericReply(original: String): String {
-        knowledge?.search(original)?.firstOrNull()?.let { return "از دانشی که قبلاً با اجازهٔ تو روی گوشی ذخیره شده: $it" }
-        return "موضوع «${original.take(80)}» را به اجزای کوچک‌تر تقسیم می‌کنم و بر اساس اصول شناخته‌شده، فرض‌ها و شواهد موجود تحلیل می‌کنم."
+        knowledge?.search(original)?.firstOrNull()?.let { return "یادم هست: $it" }
+        return "در حالت آفلاین هم کنارت هستم. دربارهٔ «${original.take(80)}» بگو دنبال توضیح، مقایسه یا انجام یک کار هستی تا از همین‌جا شروع کنیم."
     }
 
     private fun rememberTopic(value: String) {

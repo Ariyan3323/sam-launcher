@@ -39,11 +39,11 @@
     <string name="assistant_thinking">Raad is thinking…</string>
     <string name="assistant_agent_ready">ایجنت سام: حالت محلی آماده است</string>
     <string name="assistant_agent_online">ایجنت سام: Gemini آنلاین است</string>
-    <string name="assistant_agent_scientific">ایجنت سام: موتور تحلیل علمی آماده است</string>
-    <string name="assistant_agent_error">ایجنت سام: تحلیل علمی دستگاه آماده است</string>
-    <string name="assistant_scientific_fallback">ایجنت سام: تحلیل علمی ذخیره‌شده اجرا شد</string>
+    <string name="assistant_agent_scientific">سام آماده است</string>
+    <string name="assistant_agent_error">سام فعلاً در حالت محلی است</string>
+    <string name="assistant_scientific_fallback">با امکانات خود گوشی ادامه می‌دهم</string>
     <string name="assistant_agent_tools">Tools used: %1$s</string>
-    <string name="agent_status_scientific">ایجنت سام: تحلیل علمی دستگاه فعال است</string>
+    <string name="agent_status_scientific">سام آمادهٔ کمک است</string>
     <string name="agent_status_gemini">Sam agent: Gemini smart mode active</string>
     <string name="voice_unavailable">ورودی صوتی در دسترس نیست؛ سرویس تشخیص گفتار روی این دستگاه نصب نیست.</string>
     <string name="launcher_agent_title">Sam AI</string>

@@ -19,16 +19,15 @@ import java.util.Locale
 // ۱. تنظیمات ایجنت
 // ═══════════════════════════════════════════════════════════════
 data class AgentConfig(
-    val name: String = "رعد",
+    val name: String = "سام",
     val personality: String = """
-        تو "$name" هستی؛ یک دانشمند و تحلیلگر ارشد برای لانچر اندروید.
-        اصول تو:
-        - با روش علمی، استدلال مرحله‌به‌مرحله، شواهد و فرض‌های روشن پاسخ بده.
-        - پاسخ را دقیق، طبیعی، فارسی‌محور و متناسب با سطح کاربر بنویس؛ از ادعای بی‌پشتوانه پرهیز کن.
-        - در نبود دسترسی به سرویس بیرونی، از دانش محلی، حافظه بلندمدت و داده‌های دستگاه استفاده کن و بهترین تحلیل قابل دفاع را ارائه بده.
-        - بین واقعیت مشاهده‌شده، استنباط و پیشنهاد آینده تفاوت بگذار.
-        - پاسخ‌های علمی، خلاصه‌ها، ترجیحات کاربر و دستورات مفید را به عنوان دانش قابل بازیابی در نظر بگیر.
-        - حریم خصوصی مقدم است؛ داده حساس را فقط برای اجرای همان درخواست مصرف کن و در پاسخ افشا نکن.
+        تو "$name" هستی؛ یک همراه صمیمی، باهوش و قابل اعتماد برای کاربر.
+        با فارسی طبیعی و محاوره‌ای جواب بده؛ گرم، کوتاه و مستقیم باش، نه رسمی و رباتیک.
+        اول منظور و حال کاربر را بفهم، بعد یک پاسخ کاربردی بده. در گفت‌وگوی دوستانه خشک و آموزشی حرف نزن.
+        اگر کاری از ابزارهای گوشی برمی‌آید، خودت ابزار مناسب را اجرا کن و نتیجه را روشن بگو.
+        اگر مطمئن نیستی، صادقانه بگو و یک سؤال کوتاه برای روشن‌شدن موضوع بپرس؛ حدس بی‌پایه نزن.
+        از عبارت‌های کلیشه‌ای، گزارش‌دادن روند فکر، تکرار پیام‌های قبلی و لحن اداری پرهیز کن.
+        حریم خصوصی مقدم است؛ داده حساس را فقط برای اجرای همان درخواست مصرف کن.
     """.trimIndent(),
     val geminiApiKey: String = "YOUR_GEMINI_API_KEY_HERE",
     val openAiApiKey: String = "",
@@ -318,9 +317,9 @@ class LlmClient(private val config: AgentConfig) {
             }
             val text = JSONObject(responseBody).optJSONArray("choices")
                 ?.optJSONObject(0)?.optJSONObject("message")?.optString("content").orEmpty()
-            AgentResponse(text = text.ifBlank { "پاسخی دریافت نشد." }, needsToolCall = false)
+            AgentResponse(text = text.ifBlank { "فعلاً جواب روشنی از سرویس نگرفتم؛ اگر بخواهی با امکانات خود گوشی ادامه می‌دهم." }, needsToolCall = false)
         }.getOrElse { error ->
-            AgentResponse("موتور Gemini پاسخ کامل نداد؛ تحلیل علمی ذخیره‌شده آماده است.", false, successful = false)
+            AgentResponse("اتصال به سرویس هوش مصنوعی برقرار نشد؛ می‌توانم همین‌جا با امکانات خود گوشی کمکت کنم.", false, successful = false)
         }
     }
 
@@ -338,18 +337,18 @@ class LlmClient(private val config: AgentConfig) {
                     status == "NOT_FOUND" || message.contains("not found", ignoreCase = true) ->
                         "مدل Gemini پیدا نشد؛ نام مدل را روی gemini-2.5-flash بگذار."
                     message.contains("location is not supported", ignoreCase = true) ->
-                        "سرویس Gemini در منطقه فعلی قابل استفاده نیست؛ تحلیل علمی ذخیره‌شده ادامه پیدا می‌کند."
-                    message.isNotBlank() -> "سرویس Gemini خطا داد: ${message.take(180)}؛ تحلیل ذخیره‌شده آماده است."
-                    else -> "پاسخ Gemini آماده نشد؛ تحلیل علمی ذخیره‌شده فعال است."
+                        "این سرویس در منطقهٔ فعلی در دسترس نیست؛ اگر بخواهی با حالت محلی ادامه می‌دهم."
+                    message.isNotBlank() -> "سرویس هوش مصنوعی خطا داد: ${message.take(180)}"
+                    else -> "فعلاً از سرویس هوش مصنوعی پاسخی نگرفتم؛ دوباره امتحان کنیم؟"
                 }
-            }.getOrDefault("پاسخ Gemini آماده نشد؛ تحلیل علمی ذخیره‌شده فعال است.")
+            }.getOrDefault("فعلاً از سرویس هوش مصنوعی پاسخی نگرفتم؛ دوباره امتحان کنیم؟")
             return AgentResponse(text = friendly, needsToolCall = false, successful = false)
         }
 
         return try {
             val json = JSONObject(body)
             val candidates = json.getJSONArray("candidates")
-            if (candidates.length() == 0) return AgentResponse(text = "پاسخی دریافت نشد.", needsToolCall = false)
+            if (candidates.length() == 0) return AgentResponse(text = "این بار پاسخی از سرویس نرسید؛ دوباره امتحان کنیم؟", needsToolCall = false)
 
             val parts = candidates.getJSONObject(0)
                 .getJSONObject("content")
@@ -374,7 +373,7 @@ class LlmClient(private val config: AgentConfig) {
 
             AgentResponse(text = textResponse, needsToolCall = toolCall != null, toolCall = toolCall)
         } catch (e: Exception) {
-            AgentResponse(text = "پاسخ سرویس قابل پردازش نبود؛ تحلیل علمی ذخیره‌شده فعال است.", needsToolCall = false, successful = false)
+            AgentResponse(text = "پاسخ سرویس قابل خواندن نبود؛ اگر بخواهی درخواستت را کوتاه‌تر دوباره می‌فرستیم.", needsToolCall = false, successful = false)
         }
     }
 }

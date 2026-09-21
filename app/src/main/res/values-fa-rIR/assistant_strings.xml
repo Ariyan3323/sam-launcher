@@ -39,11 +39,11 @@
     <string name="assistant_thinking">سام در حال فکر کردن است…</string>
     <string name="assistant_agent_ready">ایجنت سام: حالت محلی آماده است</string>
     <string name="assistant_agent_online">ایجنت سام: Gemini آنلاین است</string>
-    <string name="assistant_agent_scientific">ایجنت سام: موتور تحلیل علمی آماده است</string>
-    <string name="assistant_agent_error">ایجنت سام: تحلیل علمی دستگاه آماده است</string>
-    <string name="assistant_scientific_fallback">ایجنت سام: تحلیل علمی ذخیره‌شده اجرا شد</string>
+    <string name="assistant_agent_scientific">سام آماده است</string>
+    <string name="assistant_agent_error">سام فعلاً در حالت محلی است</string>
+    <string name="assistant_scientific_fallback">با امکانات خود گوشی ادامه می‌دهم</string>
     <string name="assistant_agent_tools">ابزارهای استفاده‌شده: %1$s</string>
-    <string name="agent_status_scientific">ایجنت سام: تحلیل علمی دستگاه فعال است</string>
+    <string name="agent_status_scientific">سام آمادهٔ کمک است</string>
     <string name="agent_status_gemini">ایجنت سام: حالت هوشمند Gemini فعال</string>
     <string name="agent_status_openai">ایجنت سام: حالت هوشمند OpenAI فعال</string>
     <string name="agent_status_custom">ایجنت سام: سرویس هوش مصنوعی سفارشی فعال</string>
@@ -51,7 +51,7 @@
     <string name="agent_status_custom_ready">ایجنت سام: سرویس سفارشی تنظیم شده است</string>
     <string name="voice_unavailable">ورودی صوتی در دسترس نیست؛ سرویس تشخیص گفتار روی این دستگاه نصب نیست.</string>
     <string name="launcher_agent_title">هوش مصنوعی سام</string>
-    <string name="launcher_agent_subtitle">همراه هوشمند و علمی لانچر شما</string>
+    <string name="launcher_agent_subtitle">همراه هوشمند و صمیمی لانچر شما</string>
     <string name="launcher_agent_ready">آماده</string>
     <string name="launcher_agent_hint">هر چیزی از سام بپرسید…</string>
     <string name="launcher_agent_ask">پرسش</string>
@@ -62,6 +62,6 @@
     <string name="launcher_agent_demo">اجرای نمونه</string>
     <string name="launcher_agent_demo_command">باتری را بررسی کن، وضعیت حافظه گوشی را بگو و اختلالات سام را بررسی کن</string>
     <string name="launcher_agent_online">Gemini آنلاین</string>
-    <string name="launcher_agent_local">حالت علمی</string>
+    <string name="launcher_agent_local">حالت محلی</string>
     <string name="ai_settings_button">تنظیمات هوش مصنوعی</string>
 </resources>

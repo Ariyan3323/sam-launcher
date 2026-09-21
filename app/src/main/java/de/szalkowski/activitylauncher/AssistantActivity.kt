@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
+import android.media.AudioManager
 import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -594,6 +595,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun runLocalCommand(rawCommand: String) {
         val command = rawCommand.trim().lowercase(Locale.ROOT)
         when {
+            command.contains("روشنایی") || command.contains("نور صفحه") ||
+                command.contains("brightness") -> adjustScreenBrightness(command)
+            command.contains("صدای گوشی") || command.contains("ولوم") ||
+                command.contains("volume") || command.contains("صدا را") -> adjustDeviceVolume(command)
             command.contains("چراغ قوه") || command.contains("چراغقوه") ||
                 command.contains("فلش گوشی") || command.contains("flashlight") || command.contains("torch") ->
                 toggleFlashlight(command)
@@ -699,6 +704,63 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun adjustScreenBrightness(command: String) {
+        if (!Settings.System.canWrite(this)) {
+            val permissionIntent = Intent(
+                Settings.ACTION_MANAGE_WRITE_SETTINGS,
+                Uri.parse("package:$packageName")
+            )
+            runCatching { startActivity(permissionIntent) }
+                .onSuccess { respond("برای تغییر روشنایی صفحه، اجازهٔ تغییر تنظیمات سیستم را فعال کن.") }
+                .onFailure { respond("اجازهٔ تغییر روشنایی صفحه فعال نیست.") }
+            return
+        }
+        val current = Settings.System.getInt(
+            contentResolver,
+            Settings.System.SCREEN_BRIGHTNESS,
+            128
+        )
+        val requestedPercent = Regex("(?:[۰-۹0-9]{1,3})\\s*(?:درصد|%|٪)")
+            .find(command)?.value?.filter { it.isDigit() || it in '۰'..'۹' }
+            ?.toPersianNumber()?.toIntOrNull()
+        val target = when {
+            requestedPercent != null -> requestedPercent.coerceIn(1, 100) * 255 / 100
+            command.contains("کم") || command.contains("پایین") || command.contains("down") -> (current - 38).coerceAtLeast(1)
+            command.contains("زیاد") || command.contains("بالا") || command.contains("up") -> (current + 38).coerceAtMost(255)
+            else -> current
+        }
+        runCatching { Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, target) }
+            .onSuccess { respond("روشنایی صفحه روی ${target * 100 / 255}٪ تنظیم شد.") }
+            .onFailure { respond("تغییر روشنایی صفحه ممکن نبود.") }
+    }
+
+    private fun adjustDeviceVolume(command: String) {
+        val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val stream = AudioManager.STREAM_MUSIC
+        val max = audio.getStreamMaxVolume(stream)
+        val current = audio.getStreamVolume(stream)
+        val requestedPercent = Regex("(?:[۰-۹0-9]{1,3})\\s*(?:درصد|%|٪)")
+            .find(command)?.value?.filter { it.isDigit() || it in '۰'..'۹' }
+            ?.toPersianNumber()?.toIntOrNull()
+        val target = when {
+            command.contains("بی صدا") || command.contains("بی‌صدا") || command.contains("ساکت") || command.contains("mute") -> 0
+            requestedPercent != null -> requestedPercent.coerceIn(0, 100) * max / 100
+            command.contains("کم") || command.contains("پایین") || command.contains("down") -> (current - 1).coerceAtLeast(0)
+            command.contains("زیاد") || command.contains("بالا") || command.contains("up") -> (current + 1).coerceAtMost(max)
+            else -> current
+        }
+        audio.setStreamVolume(stream, target, 0)
+        respond(if (target == 0) "صدای رسانه بی‌صدا شد." else "صدای رسانه روی ${target * 100 / max.coerceAtLeast(1)}٪ تنظیم شد.")
+    }
+
+    private fun String.toPersianNumber(): String =
+        map { char ->
+            when (char) {
+                in '۰'..'۹' -> ('0'.code + (char.code - '۰'.code)).toChar()
+                else -> char
+            }
+        }.joinToString("")
+
     private fun toggleFlashlight(command: String) {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
             respond("کنترل چراغ‌قوه در این نسخهٔ اندروید پشتیبانی نمی‌شود.")
@@ -774,7 +836,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun offlineConversationReply(question: String): String =
-        "سام موضوع «${question.take(80)}» را بر پایهٔ اصول شناخته‌شده، فرض‌ها و شواهد موجود تحلیل می‌کند."
+        "حرفت دربارهٔ «${question.take(80)}» را گرفتم. برای اینکه دقیق کمک کنم، بگو دنبال توضیح، مقایسه یا انجام یک کار هستی."
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()
@@ -832,7 +894,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.matches(Regex("(سلام|درود|hello|hi|hey).*")) ->
                 "سلام! خوش آمدی. من سام هستم؛ هر کاری خواستی بگو—مثلاً برنامه‌ای باز کنم، تماس بگیرم، پیام بفرستم، تلگرام را باز کنم، باتری و حافظه را بررسی کنم یا فقط با هم صحبت کنیم."
             command.contains("اسمت چیه") || command.contains("کی هستی") || command.contains("who are you") ->
-                "من سام، دستیار محلی Sam Launcher هستم؛ برای کارهای روزمره اول خود گوشی را بررسی می‌کنم."
+                "من سامم؛ کنارتم تا با گوشی کارها را راحت‌تر انجام بدهیم یا فقط با هم حرف بزنیم."
             command.contains("خوبی") || command.contains("how are you") ->
                 "آماده‌ام کمک کنم. یک فرمان کوتاه مثل «باتری»، «تنظیمات» یا «باز کن دوربین» بگو."
             command.contains("دلم گرفته") || command.contains("حالم بده") || command.contains("حالم خوب نیست") ||
@@ -1249,7 +1311,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun localDeviceSummary(): String {
         val now = Calendar.getInstance()
         val time = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
-        return "وضعیت دستگاه: باتری ${batteryLevel}٪؛ ساعت $time؛ اندروید ${android.os.Build.VERSION.RELEASE}؛ موتور تحلیل علمی فعال است."
+        return "وضعیت دستگاه: باتری ${batteryLevel}٪؛ ساعت $time؛ اندروید ${android.os.Build.VERSION.RELEASE}. همه‌چیز برای کمک آماده است."
     }
 
     private fun currentTime(): String {

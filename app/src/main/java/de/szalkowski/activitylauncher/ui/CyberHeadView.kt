@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
-import android.view.Gravity
 import android.widget.ImageView
 import de.szalkowski.activitylauncher.R
 import kotlin.math.PI
@@ -34,7 +33,6 @@ class CyberHeadView @JvmOverloads constructor(
         setImageResource(R.drawable.cyber_head_reference)
         scaleType = ImageView.ScaleType.CENTER_CROP
         adjustViewBounds = true
-        gravity = Gravity.CENTER
         contentDescription = context.getString(R.string.cyber_avatar)
         setLayerType(LAYER_TYPE_SOFTWARE, null)
     }

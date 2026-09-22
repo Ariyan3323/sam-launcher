@@ -678,14 +678,20 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 command.contains("برنامه‌های اضافی") || command.contains("unused apps") ||
                 command.contains("heavy apps") || command.contains("بهینه سازی برنامه") -> showAppOptimizationReport()
             (command.contains("آخرین پیام") || command.contains("آخرینپیام")) &&
-                (command.contains("پیامنگار") || command.contains("پیام‌رسان") || command.contains("پیام رسان")) ->
-                requestLatestNotification("پیام‌رسان", emptyList())
+                (command.contains("پیامنگار") || command.contains("پیام‌رسان") || command.contains("پیام رسان") || command.contains("نگار")) ->
+                requestLatestNotification("پیام‌رسان", emptyList(), listOf("نگار", "پیام‌رسان", "پیام رسان"))
             (command.contains("آخرین") || command.contains("latest") || command.contains("چک") || command.contains("بررسی") || command.contains("check")) &&
                 (command.contains("جیمیل") || command.contains("gmail") || command.contains("ایمیل") || command.contains("email")) ->
                 requestLatestNotification("Gmail", listOf("com.google.android.gm"))
             (command.contains("آخرین پیام") || command.contains("آخرینپیام") ||
-                command.contains("آخرین اعلان") || command.contains("last message") || command.contains("latest message")) ->
+                command.contains("آخرین اعلان") || command.contains("last message") || command.contains("latest message")) &&
+                !command.contains("تلگرام") && !command.contains("telegram") &&
+                !command.contains("پیامک") && !command.contains("اس ام اس") && !command.contains("sms") && !command.contains("نگار") ->
                 requestLatestNotification("پیام یا اعلان", emptyList())
+            (command.contains("آخرین پیام") || command.contains("آخرینپیام") || command.contains("آخرین اس ام اس") ||
+                command.contains("آخریناس ام اس") || command.contains("latest sms")) &&
+                (command.contains("پیامک") || command.contains("اس ام اس") || command.contains("sms")) ->
+                requestLatestNotification("پیامک", listOf(Telephony.Sms.getDefaultSmsPackage(this).orEmpty()))
             (command.contains("پیامنگار") || command.contains("پیام نگار") ||
                 command.contains("پیام‌رسان") || command.contains("پیام رسان")) &&
                 (command.contains("باز") || command.contains("open") || command.contains("launch") || command.contains("برو")) ->
@@ -694,7 +700,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 command.contains("چک") || command.contains("بررسی") || command.contains("check") ||
                 command.contains("اعلان") || command.contains("نوتیف") ||
                 command.contains("پیام تلگرام") || command.contains("پیام‌های تلگرام")) &&
-                (command.contains("تلگرام") || command.contains("telegram")) -> requestLatestTelegramNotification()
+                (command.contains("تلگرام") || command.contains("telegram")) ->
+                requestLatestNotification("تلگرام", listOf("org.telegram", "telegram"), listOf("تلگرام", "telegram"))
             (command.contains("اعلان") || command.contains("نوتیفیکیشن") || command.contains("نوتیف")) &&
                 (command.contains("خواندن") || command.contains("بخوان") || command.contains("نمایش") || command.contains("آخرین")) ->
                 requestLatestNotification("اعلان", emptyList())
@@ -1219,30 +1226,53 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun requestLatestNotification(label: String, packageMatchers: List<String>) {
+    private fun requestLatestNotification(
+        label: String,
+        packageMatchers: List<String>,
+        titleMatchers: List<String> = emptyList()
+    ) {
         AlertDialog.Builder(this)
             .setTitle("اجازهٔ خواندن اعلان $label")
             .setMessage("سام فقط آخرین اعلان قابل‌نمایش $label را برای همین درخواست و فقط روی همین دستگاه بررسی می‌کند. صندوق حساب یا تاریخچهٔ چت مستقیماً خوانده نمی‌شود و چیزی به اینترنت ارسال نمی‌شود. تأیید می‌کنی؟")
             .setNegativeButton("انصراف", null)
-            .setPositiveButton("تأیید و ادامه") { _, _ -> showLatestNotification(label, packageMatchers) }
+            .setPositiveButton("تأیید و ادامه") { _, _ -> showLatestNotification(label, packageMatchers, titleMatchers) }
             .show()
     }
 
-    private fun showLatestNotification(label: String, packageMatchers: List<String>) {
+    private fun showLatestNotification(label: String, packageMatchers: List<String>, titleMatchers: List<String> = emptyList()) {
         val notificationAccessIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-        val cached = LastNotificationCache.get()
         val accessEnabled = NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
-        val matches = cached != null && (packageMatchers.isEmpty() || packageMatchers.any { cached.packageName.contains(it, ignoreCase = true) })
-        if (matches) {
+        val cached = LastNotificationCache.all().firstOrNull { entry ->
+            val packageMatches = packageMatchers.any { matcher ->
+                matcher.isNotBlank() && entry.packageName.contains(matcher, ignoreCase = true)
+            }
+            val titleMatches = titleMatchers.any { matcher ->
+                matcher.isNotBlank() && (entry.title.contains(matcher, ignoreCase = true) || entry.text.contains(matcher, ignoreCase = true))
+            }
+            if (packageMatchers.isEmpty() && titleMatchers.isEmpty()) true else packageMatches || titleMatches || appLabelMatches(entry.packageName, label)
+        }
+        if (cached != null) {
             val sourceName = runCatching {
                 packageManager.getApplicationLabel(packageManager.getApplicationInfo(cached!!.packageName, 0)).toString()
             }.getOrElse { cached!!.packageName }
-            respond("آخرین اعلان $label از برنامهٔ $sourceName، ${cached?.title?.ifBlank { "یک مخاطب" }}:\n${cached?.text}")
+            val message = listOf(cached.title, cached.text).filter { it.isNotBlank() }.distinct().joinToString("؛ ")
+            respond("آخرین پیام $label از برنامهٔ $sourceName: $message")
         } else if (!accessEnabled && notificationAccessIntent.resolveActivity(packageManager) != null) {
             startActivity(notificationAccessIntent)
             respond("برای خواندن آخرین اعلان $label، دسترسی اعلان سام را فعال کن؛ سپس یک اعلان جدید دریافت کن و دوباره بپرس.")
         } else {
-            respond("اعلان قابل‌خواندنی از $label در حافظهٔ موقت پیدا نشد. یک اعلان جدید دریافت کن و دوباره بپرس.")
+            respond("پیام جدیدی از $label پیدا نشد.")
+        }
+    }
+
+    private fun appLabelMatches(packageName: String, requestedLabel: String): Boolean {
+        if (requestedLabel == "پیام یا اعلان" || requestedLabel == "اعلان") return false
+        val appLabel = runCatching {
+            packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+        }.getOrDefault("")
+        val normalizedLabel = requestedLabel.normalizeUserText()
+        return normalizedLabel.split(" ").filter { it.length > 2 }.any {
+            appLabel.normalizeUserText().contains(it)
         }
     }
 
@@ -1256,19 +1286,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun showLatestTelegramNotification() {
-        val notificationAccessIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-        val cached = LastNotificationCache.get()
-        val accessEnabled = NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
-        if (cached?.packageName?.contains("telegram", ignoreCase = true) == true) {
-            respond("آخرین اعلان تلگرام از ${cached.title.ifBlank { "یک مخاطب" }}:\n${cached.text}")
-        } else if (accessEnabled) {
-            respond("دسترسی اعلان تلگرام فعال است، اما هنوز اعلان جدیدی از تلگرام دریافت نشده. یک پیام جدید دریافت کن و دوباره بپرس.")
-        } else if (notificationAccessIntent.resolveActivity(packageManager) != null) {
-            startActivity(notificationAccessIntent)
-            respond("برای دیدن آخرین پیام تلگرام، دسترسی اعلان سام را در این صفحه فعال کن. سام فقط متن اعلان‌های آینده را روی دستگاه نگه می‌دارد؛ تاریخچهٔ چت تلگرام قابل خواندن نیست.")
-        } else {
-            respond("صفحهٔ دسترسی اعلان‌ها در این دستگاه در دسترس نیست.")
-        }
+        showLatestNotification("تلگرام", listOf("org.telegram", "telegram"), listOf("تلگرام", "telegram"))
     }
 
     private fun prepareEmail(rawCommand: String) {

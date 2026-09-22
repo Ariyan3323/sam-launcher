@@ -95,13 +95,13 @@
             android:contentDescription="@string/cyber_avatar"
             android:elevation="12dp"
             android:focusable="true">
-            <ImageView
+            <de.szalkowski.activitylauncher.ui.CyberHeadView
                 android:id="@+id/avatarImage"
-                android:layout_width="92dp"
-                android:layout_height="92dp"
+                android:layout_width="132dp"
+                android:layout_height="132dp"
                 android:layout_gravity="center"
                 android:contentDescription="@string/cyber_avatar"
-                android:src="@drawable/cyber_robot_avatar" />
+                android:elevation="4dp" />
             <TextView
                 android:id="@+id/avatarState"
                 android:layout_width="wrap_content"

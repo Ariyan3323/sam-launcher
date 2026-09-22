@@ -13,6 +13,10 @@ import java.net.URL
  */
 class OnlineConversationClient {
     suspend fun answer(userText: String): String? = withContext(Dispatchers.IO) {
+        answer(userText, null)
+    }
+
+    suspend fun answer(userText: String, researchContext: String?): String? = withContext(Dispatchers.IO) {
         val prompt = userText.trim()
         if (prompt.isBlank()) return@withContext null
         runCatching {
@@ -31,7 +35,8 @@ class OnlineConversationClient {
                     put("content", "تو سام هستی. فارسی، گرم، صمیمی و محاوره‌ای پاسخ بده. پاسخ را در یک تا سه جمله کوتاه نگه دار. هرگز جدول، تیتر، شماره‌گذاری، بولت، JSON یا Markdown پیچیده نساز. برای گفت‌وگوی عادی مستقیم و طبیعی جواب بده و نگو نمی‌توانی کار فیزیکی انجام دهی؛ فرمان‌های دستگاه قبل از رسیدن به این سرویس اجرا می‌شوند.")
                 }).put(JSONObject().apply {
                     put("role", "user")
-                    put("content", prompt)
+                    put("content", if (researchContext.isNullOrBlank()) prompt else
+                        "پرسش کاربر: $prompt\n\nیافته‌های وب برای بررسی و جمع‌بندی:\n$researchContext\n\nبر اساس این یافته‌ها، تاریخ منابع و میزان اطمینان را روشن کن و اگر شواهد متناقض است بگو.")
                 }))
             }.toString()
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }

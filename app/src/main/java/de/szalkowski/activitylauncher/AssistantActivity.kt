@@ -51,6 +51,7 @@ import de.szalkowski.activitylauncher.agent.OfflineKnowledgeStore
 import de.szalkowski.activitylauncher.agent.SamAgentEngine
 import de.szalkowski.activitylauncher.agent.EngineResponse
 import de.szalkowski.activitylauncher.agent.OnlineConversationClient
+import de.szalkowski.activitylauncher.agent.DeepResearchEngine
 import de.szalkowski.activitylauncher.agent.CaregiverConversationViewModel
 import de.szalkowski.activitylauncher.agent.data.AppDatabase
 import de.szalkowski.activitylauncher.agent.data.UserProfileRepository
@@ -395,6 +396,11 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             return
         }
         val selectedMode = SecureAiSettings(this).getMode()
+        if (!isDeterministicPhoneCommand(rawCommand) && isNetworkAvailable() && isResearchRequest(rawCommand)) {
+            updateAgentStatus()
+            runDeepResearchCommand(rawCommand)
+            return
+        }
         if (!isDeterministicPhoneCommand(rawCommand) && isNetworkAvailable() && !hasConfiguredAiProvider()) {
             updateAgentStatus()
             runOnlineConversationCommand(rawCommand)
@@ -473,6 +479,15 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         return manager.getNetworkCapabilities(network)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
     }
 
+    private fun isResearchRequest(rawCommand: String): Boolean {
+        val command = rawCommand.normalizeUserText()
+        return listOf(
+            "تحقیق", "بررسی کن", "تحلیل کن", "تحلیل", "آخرین خبر", "اخبار", "چه خبر", "چخبر", "چهخبر",
+            "چی میشه", "چه میشه", "چطوره", "چرا", "چگونه", "چطور", "آیا", "؟", "?",
+            "جنگ", "اقتصاد", "سیاست", "بازار", "قیمت", "آینده"
+        ).any(command::contains)
+    }
+
     private fun isDeterministicPhoneCommand(rawCommand: String): Boolean {
         val command = rawCommand.normalizeUserText()
         return listOf(
@@ -491,8 +506,6 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             "هوش‌های دیگر", "هوش های دیگر", "از هوش‌های دیگر", "از هوش های دیگر", "share ai",
             "پیامنگار", "پیام نگار", "پیام‌رسان", "پیام رسان", "اس ام اس", "پیام بده",
             "پیام بفرست", "تلگرام", "برو تل", "زنگ بزن",
-            "چه خبر", "چخبر", "چهخبر", "اخبار جهان", "خبرهای امروز", "اخبار مهم", "world news", "latest news",
-            "سیاست", "ترید", "رمز ارز", "ارز دیجیتال", "درس", "اخبار روز",
             "حالت کار", "work mode", "حالت رانندگی", "driving mode", "حالت خواب", "sleep mode",
             "حافظه", "remember ", "به خاطر بسپار", "حریم خصوصی", "privacy mode", "حالت مهمان", "guest mode"
         ).any(command::contains)
@@ -541,6 +554,22 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         }
                         respond(if (usedFallback) "[پاسخ از Provider جایگزین]\n$reply" else reply)
                         binding.bubble.setState(AssistantBubbleView.State.READY)
+            }
+        }
+    }
+
+    private fun runDeepResearchCommand(rawCommand: String) {
+        composeMascotState = MascotState.Thinking
+        binding.bubble.setState(AssistantBubbleView.State.THINKING)
+        binding.agentStatus.setText(R.string.assistant_thinking)
+        respond("در حال جمع‌آوری چند منبع و تحلیل آن‌ها…", speak = false)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val answer = DeepResearchEngine().answer(rawCommand)
+            withContext(Dispatchers.Main) {
+                binding.bubble.setState(AssistantBubbleView.State.READY)
+                composeMascotState = MascotState.Speaking
+                updateAgentStatus(answer != null)
+                respond(answer ?: "منبع کافی برای تحلیل دقیق پیدا نشد؛ پرسش را کمی مشخص‌تر بگو.")
             }
         }
     }
@@ -683,7 +712,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("زنگ بزن") -> prepareCall(rawCommand)
             command.contains("تنظیمات") || command.contains("settings") -> openSettings()
             command.contains("آلارم") || command.contains("alarm") || command.contains("زنگ هشدار") ->
-                openSystemSettings(Settings.ACTION_ALARM_SETTINGS, "تنظیمات آلارم")
+                openSystemSettings("android.settings.ALARM_SETTINGS", "تنظیمات آلارم")
             command.contains("تنظیم ساعت") || command.contains("تنظیم تاریخ") || command.contains("تاریخ") ->
                 openSystemSettings(Settings.ACTION_DATE_SETTINGS, "تنظیمات تاریخ و ساعت")
             (command.contains("موزیک") || command.contains("موسیقی") || command.contains("آهنگ") ||

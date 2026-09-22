@@ -66,26 +66,29 @@ class CyberHeadView @JvmOverloads constructor(
 
         super.onDraw(canvas)
 
-        // Coordinates follow the eyes in the supplied portrait crop.
-        val leftX = width * 0.405f + gazeX
-        val rightX = width * 0.645f + gazeX
-        val eyeY = height * 0.335f + gazeY
-        val eyeWidth = width * 0.072f
-        val eyeHeight = height * 0.035f * blink
+        // Coordinates follow the real eyes in the front-facing portrait crop.
+        val leftX = width * 0.37f + gazeX
+        val rightX = width * 0.66f + gazeX
+        val eyeY = height * 0.46f + gazeY
+        val eyeWidth = width * 0.045f
+        val eyeHeight = height * 0.018f * blink
         drawEye(canvas, leftX, eyeY, eyeWidth, eyeHeight)
         drawEye(canvas, rightX, eyeY, eyeWidth, eyeHeight)
     }
 
     private fun drawEye(canvas: Canvas, x: Float, y: Float, width: Float, height: Float) {
         eyeRect.set(x - width, y - height, x + width, y + height)
-        glowPaint.color = Color.argb(100, 70, 235, 255)
-        glowPaint.setShadowLayer(22f, 0f, 0f, Color.CYAN)
+        glowPaint.color = Color.argb(70, 50, 235, 255)
+        glowPaint.setShadowLayer(14f, 0f, 0f, Color.CYAN)
         canvas.drawOval(eyeRect, glowPaint)
         glowPaint.clearShadowLayer()
 
-        eyePaint.color = Color.WHITE
-        eyePaint.setShadowLayer(12f, 0f, 0f, Color.CYAN)
+        eyePaint.color = Color.argb(180, 65, 238, 255)
+        eyePaint.setShadowLayer(7f, 0f, 0f, Color.CYAN)
         canvas.drawOval(eyeRect, eyePaint)
         eyePaint.clearShadowLayer()
+        eyePaint.color = Color.rgb(12, 50, 70)
+        val pupil = RectF(x - width * 0.22f, y - height * 0.45f, x + width * 0.22f, y + height * 0.45f)
+        canvas.drawOval(pupil, eyePaint)
     }
 }

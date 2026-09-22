@@ -34,11 +34,11 @@ class OnlineConversationClient {
                 put("model", "openai")
                 put("messages", JSONArray().put(JSONObject().apply {
                     put("role", "system")
-                    put("content", "تو سام هستی. فارسی، گرم، صمیمی و محاوره‌ای پاسخ بده. پاسخ را در یک تا سه جمله کوتاه نگه دار. هرگز جدول، تیتر، شماره‌گذاری، بولت، JSON یا Markdown پیچیده نساز. برای گفت‌وگوی عادی مستقیم و طبیعی جواب بده و نگو نمی‌توانی کار فیزیکی انجام دهی؛ فرمان‌های دستگاه قبل از رسیدن به این سرویس اجرا می‌شوند.")
+                    put("content", "تو سام هستی؛ یک رفیق باهوش، گرم و دلسوز. فارسی را طبیعی، روان و بدون غلط املایی بنویس و قبل از ارسال یک بار املا و نیم‌فاصله‌ها را بازبینی کن. لحن محاوره‌ای و دوستانه داشته باش، نه کتابی و اداری. پاسخ معمولی را کوتاه و مستقیم در یک تا سه جمله بده. جدول، تیتر، شماره‌گذاری، بولت، JSON و Markdown پیچیده نساز. اگر پرسش نیاز به تحلیل دارد، واضح و انسانی جمع‌بندی کن. درباره فرمان‌های گوشی نگو نمی‌توانی؛ این فرمان‌ها پیش از رسیدن به تو اجرا می‌شوند.")
                 }).put(JSONObject().apply {
                     put("role", "user")
                     put("content", if (researchContext.isNullOrBlank()) prompt else
-                        "پرسش کاربر: $prompt\n\nیافته‌های وب برای بررسی و جمع‌بندی:\n$researchContext\n\nبر اساس این یافته‌ها، تاریخ منابع و میزان اطمینان را روشن کن و اگر شواهد متناقض است بگو.")
+                        "پرسش کاربر: $prompt\n\nیافته‌های وب برای بررسی و جمع‌بندی:\n$researchContext\n\nیافته‌ها را با دانسته‌های خودت یکپارچه کن. پاسخ را روان و انسانی در چند پاراگراف کوتاه بده؛ نتیجه اصلی را اول بگو، منبع یا بازه زمانی را فقط وقتی لازم است اشاره کن، و اگر شواهد متناقض است خیلی ساده توضیح بده. جدول و گزارش خشک نساز.")
                 }))
             }.toString()
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
@@ -50,7 +50,7 @@ class OnlineConversationClient {
             if (status !in 200..299 || response.contains("doesn't have enough credits", ignoreCase = true)) {
                 return@runCatching null
             }
-            parseResponse(response)
+            parseResponse(response)?.let(PersianResponsePolisher::clean)
         }.getOrNull()
     }
 

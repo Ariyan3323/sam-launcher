@@ -52,6 +52,7 @@ import de.szalkowski.activitylauncher.agent.SamAgentEngine
 import de.szalkowski.activitylauncher.agent.EngineResponse
 import de.szalkowski.activitylauncher.agent.OnlineConversationClient
 import de.szalkowski.activitylauncher.agent.DeepResearchEngine
+import de.szalkowski.activitylauncher.agent.PersianResponsePolisher
 import de.szalkowski.activitylauncher.agent.CaregiverConversationViewModel
 import de.szalkowski.activitylauncher.agent.data.AppDatabase
 import de.szalkowski.activitylauncher.agent.data.UserProfileRepository
@@ -538,17 +539,18 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         binding.bubble.setState(if (output.success) AssistantBubbleView.State.READY else AssistantBubbleView.State.ERROR)
                         composeMascotState = if (output.success) MascotState.Speaking else MascotState.Idle
                         if (!output.success) {
-                            // Cloud failure must never leave the user without an answer.
-                            // Keep the failure in the status line, then execute the same
-                            // command through deterministic local routing/conversation.
+                            // Keep provider failures invisible to the user: try the keyless
+                            // online LLM while connected, then use local memory as the final fallback.
                             binding.agentStatus.text = getString(R.string.assistant_scientific_fallback)
-                            runLocalCommand(rawCommand)
+                            if (isNetworkAvailable()) runOnlineConversationCommand(rawCommand)
+                            else runLocalCommand(rawCommand)
                             binding.bubble.setState(AssistantBubbleView.State.READY)
                             return@withContext
                         }
                         val tools = output.executedTools.distinct()
-                        val reply = if (tools.isEmpty()) output.reply
+                        val rawReply = if (tools.isEmpty()) output.reply
                         else "${output.reply}\n\n${getString(R.string.assistant_agent_tools, tools.joinToString(", "))}"
+                        val reply = PersianResponsePolisher.clean(rawReply)
                         if (shouldCacheKnowledge(rawCommand, output.reply)) {
                             offlineKnowledge.save(rawCommand, output.reply)
                         }
@@ -562,7 +564,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         composeMascotState = MascotState.Thinking
         binding.bubble.setState(AssistantBubbleView.State.THINKING)
         binding.agentStatus.setText(R.string.assistant_thinking)
-        respond("در حال جمع‌آوری چند منبع و تحلیل آن‌ها…", speak = false)
+        respond(getString(R.string.assistant_thinking), speak = false)
         lifecycleScope.launch(Dispatchers.IO) {
             val answer = DeepResearchEngine().answer(rawCommand)
             withContext(Dispatchers.Main) {

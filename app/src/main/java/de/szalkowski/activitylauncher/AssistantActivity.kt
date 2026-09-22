@@ -1077,7 +1077,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE),
                     null,
                     null,
-                    "${Telephony.Sms.DATE} DESC"
+                    if (bankOnly) "${Telephony.Sms.DATE} DESC" else "${Telephony.Sms.DATE} DESC LIMIT 1"
                 )?.use { cursor ->
                     while (cursor.moveToNext()) {
                         val address = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)).orEmpty()

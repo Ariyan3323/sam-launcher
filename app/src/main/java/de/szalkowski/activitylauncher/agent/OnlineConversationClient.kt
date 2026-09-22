@@ -12,6 +12,8 @@ import java.net.URL
  * Phone actions never use this client; they remain on the native command router.
  */
 class OnlineConversationClient {
+    private val freeEndpoint = "https://text.pollinations.ai/"
+
     suspend fun answer(userText: String): String? = withContext(Dispatchers.IO) {
         answer(userText, null)
     }
@@ -20,7 +22,7 @@ class OnlineConversationClient {
         val prompt = userText.trim()
         if (prompt.isBlank()) return@withContext null
         runCatching {
-            val connection = (URL("https://text.pollinations.ai/openai").openConnection() as HttpURLConnection).apply {
+            val connection = (URL(freeEndpoint).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
                 connectTimeout = 10_000
                 readTimeout = 30_000
@@ -45,17 +47,22 @@ class OnlineConversationClient {
                 connection.inputStream.bufferedReader().use { it.readText() }
             } else ""
             connection.disconnect()
-            if (status !in 200..299) return@runCatching null
+            if (status !in 200..299 || response.contains("doesn't have enough credits", ignoreCase = true)) {
+                return@runCatching null
+            }
             parseResponse(response)
         }.getOrNull()
     }
 
     private fun parseResponse(body: String): String? = runCatching {
-        val json = JSONObject(body)
+        val trimmed = body.trim()
+        if (trimmed.isBlank() || trimmed.contains("doesn't have enough credits", ignoreCase = true)) return@runCatching null
+        if (!trimmed.startsWith("{")) return@runCatching trimmed
+        val json = JSONObject(trimmed)
         json.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.optString("content")
             ?.trim()
             ?.takeIf { it.isNotBlank() }
             ?: json.optString("text").trim().takeIf { it.isNotBlank() }
-            ?: body.trim().takeIf { it.isNotBlank() }
+            ?: trimmed.takeIf { it.isNotBlank() }
     }.getOrNull()
 }

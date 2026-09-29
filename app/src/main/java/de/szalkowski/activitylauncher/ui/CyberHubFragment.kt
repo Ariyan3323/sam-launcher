@@ -113,13 +113,6 @@ class CyberHubFragment : Fragment() {
         binding.nodeSettings.setOnClickListener {
             navigateWithPulse(it) { startActivity(Intent(requireContext(), SettingsActivity::class.java)) }
         }
-        binding.optimizeButton.setOnClickListener {
-            navigateWithPulse(it) {
-                startActivity(Intent(requireContext(), AssistantActivity::class.java).apply {
-                    putExtra(AssistantActivity.EXTRA_INITIAL_COMMAND, "برنامه‌های سنگین و کم‌استفاده را بررسی کن")
-                })
-            }
-        }
         binding.quickGallery.setOnClickListener { launchQuickApp("com.google.android.apps.photos", "گالری") }
         binding.quickMusic.setOnClickListener { launchQuickApp("com.google.android.apps.youtube.music", "موزیک") }
         binding.quickMessages.setOnClickListener { launchQuickApp("com.google.android.apps.messaging", "پیام‌ها") }

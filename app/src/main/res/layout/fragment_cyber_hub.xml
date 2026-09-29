@@ -88,45 +88,29 @@
         <FrameLayout
             android:id="@+id/avatarFrame"
             android:layout_width="match_parent"
-            android:layout_height="156dp"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/bg_cyber_avatar"
+            android:layout_height="180dp"
+            android:layout_marginTop="12dp"
             android:clickable="true"
             android:contentDescription="@string/cyber_avatar"
-            android:elevation="12dp"
             android:focusable="true">
             <de.szalkowski.activitylauncher.ui.CyberHeadView
                 android:id="@+id/avatarImage"
-                android:layout_width="132dp"
-                android:layout_height="132dp"
+                android:layout_width="180dp"
+                android:layout_height="160dp"
                 android:layout_gravity="center"
-                android:contentDescription="@string/cyber_avatar"
-                android:elevation="4dp" />
+                android:contentDescription="@string/cyber_avatar" />
             <TextView
                 android:id="@+id/avatarState"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|center_horizontal"
-                android:layout_marginBottom="10dp"
+                android:layout_marginBottom="2dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:text="READY"
-                android:textColor="@color/cyber_green"
-                android:textSize="10sp"
+                android:text="SAM // آماده گفتگو و لمس"
+                android:textColor="@color/cyber_cyan"
+                android:textSize="11sp"
                 android:textStyle="bold" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/optimizeButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_marginEnd="12dp"
-                android:layout_marginBottom="10dp"
-                android:minHeight="38dp"
-                android:text="OPTIMIZE NOW"
-                android:textColor="@color/cyber_text"
-                android:textSize="10sp"
-                app:backgroundTint="@color/cyber_violet"
-                app:cornerRadius="18dp" />
         </FrameLayout>
 
         <TextView

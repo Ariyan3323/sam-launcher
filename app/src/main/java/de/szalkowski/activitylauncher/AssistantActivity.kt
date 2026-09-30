@@ -18,6 +18,8 @@ import android.provider.Settings
 import android.provider.Telephony
 import android.provider.ContactsContract
 import android.speech.RecognizerIntent
+import android.speech.RecognitionListener
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.view.inputmethod.EditorInfo

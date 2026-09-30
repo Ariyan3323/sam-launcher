@@ -50,6 +50,12 @@ fun ModernChatScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 TextButton(onClick = onAppearance) { Text("ظاهر") }; TextButton(onClick = onOtherAi) { Text("هوش‌های دیگر") }; TextButton(onClick = onSettings) { Text("تنظیمات") }
             }
+            // The body map makes the multi-model architecture visible without exposing provider internals.
+            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                listOf("🧠 مغز", "❤️ قلب", "👁 حواس", "💾 حافظه", "✋ دست", "🦵 پا").forEach {
+                    AssistChip(onClick = {}, label = { Text(it, fontSize = 10.sp) }, modifier = Modifier.weight(1f))
+                }
+            }
             LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(vertical = 8.dp)) {
                 items(messages, key = { it.id }) { message ->
                     val user = message.role == CaregiverRepository.ROLE_USER
@@ -69,7 +75,7 @@ fun ModernChatScreen(
                 OutlinedTextField(value = input, onValueChange = { input = it }, modifier = Modifier.weight(1f), placeholder = { Text("پیام یا دستور…") }, maxLines = 4, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Neon, unfocusedBorderColor = Cyan.copy(alpha = .55f), cursorColor = Neon))
                 IconButton(onClick = onVoice) { Text("♩", color = Neon, fontSize = 24.sp) }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { showActions = true }, modifier = Modifier.weight(1f)) { Text("⚡ دستورات") }
                 Button(onClick = ::send, modifier = Modifier.weight(1f)) { Text("ارسال") }
             }

@@ -71,6 +71,11 @@
             android:title="@string/ai_openai_key_title"
             android:summary="@string/ai_key_summary" />
         <EditTextPreference
+            android:key="ai_sakana_key"
+            android:inputType="textPassword"
+            android:title="@string/ai_sakana_key_title"
+            android:summary="@string/ai_key_summary" />
+        <EditTextPreference
             android:defaultValue="https://api.openai.com/v1"
             android:key="ai_base_url"
             android:title="@string/ai_base_url_title"

@@ -223,8 +223,11 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             AgentConfig(
                 name = "سام",
                 geminiApiKey = if (useGemini) storedGemini.ifBlank { BuildConfig.GEMINI_API_KEY } else "",
-                openAiApiKey = if (!useGemini) storedOpenAi.ifBlank { BuildConfig.OPENAI_API_KEY } else "",
-                model = if (useGemini) {
+                openAiApiKey = if (!useGemini && provider != "sakana") storedOpenAi.ifBlank { BuildConfig.OPENAI_API_KEY } else "",
+                sakanaApiKey = if (provider == "sakana") aiSettings.get("sakana") else "",
+                model = if (provider == "sakana") {
+                    aiSettings.getModel().takeUnless { it.isBlank() } ?: "fugu"
+                } else if (useGemini) {
                     aiSettings.getModel().takeUnless { it.isBlank() || it.startsWith("gpt-") } ?: "gemini-2.5-flash"
                 } else {
                     aiSettings.getModel().takeUnless { it.isBlank() || it.startsWith("gemini") } ?: "gpt-4o-mini"
@@ -306,7 +309,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun aiFingerprint(settings: SecureAiSettings): String = listOf(
         settings.getMode(), settings.getProvider(), settings.get("gemini"), settings.get("openai"),
-        settings.getBaseUrl(), settings.getModel()
+        settings.get("sakana"), settings.getBaseUrl(), settings.getModel()
     ).joinToString("|").hashCode().toString()
 
     override fun onStop() {
@@ -471,7 +474,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Do not lock the app to the selected provider: if its key is missing,
         // the other configured provider must still be eligible for fallback.
         return (settings.get("gemini").isConfigured() || BuildConfig.GEMINI_API_KEY.isConfigured()) ||
-            (settings.get("openai").isConfigured() || BuildConfig.OPENAI_API_KEY.isConfigured())
+            (settings.get("openai").isConfigured() || BuildConfig.OPENAI_API_KEY.isConfigured()) ||
+            settings.get("sakana").isConfigured()
     }
 
     private fun isNetworkAvailable(): Boolean {
@@ -594,21 +598,26 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun alternateProviderAgent(settings: SecureAiSettings, primary: String): SamAgent? {
-        val alternate = if (primary == "gemini") "openai" else "gemini"
+        val alternate = when (primary) {
+            "gemini" -> "openai"
+            "openai" -> if (settings.get("sakana").isConfigured()) "sakana" else "gemini"
+            else -> if (settings.get("gemini").isConfigured() || BuildConfig.GEMINI_API_KEY.isConfigured()) "gemini" else "openai"
+        }
         val key = settings.get(alternate).ifBlank {
-            if (alternate == "gemini") BuildConfig.GEMINI_API_KEY else BuildConfig.OPENAI_API_KEY
+            if (alternate == "gemini") BuildConfig.GEMINI_API_KEY else if (alternate == "openai") BuildConfig.OPENAI_API_KEY else ""
         }
         if (key.isBlank()) return null
         val useGemini = alternate == "gemini"
-        val model = if (useGemini) {
-            settings.getModel().takeUnless { it.isBlank() || it.startsWith("gpt-") } ?: "gemini-2.5-flash"
-        } else {
-            settings.getModel().takeUnless { it.isBlank() || it.startsWith("gemini") } ?: "gpt-4o-mini"
+        val model = when (alternate) {
+            "gemini" -> settings.getModel().takeUnless { it.isBlank() || it.startsWith("gpt-") || it.startsWith("fugu") } ?: "gemini-2.5-flash"
+            "sakana" -> settings.getModel().takeUnless { it.isBlank() || it.startsWith("gemini") || it.startsWith("gpt-") } ?: "fugu"
+            else -> settings.getModel().takeUnless { it.isBlank() || it.startsWith("gemini") || it.startsWith("fugu") } ?: "gpt-4o-mini"
         }
         return SamAgent(this, AgentConfig(
             name = "سام",
             geminiApiKey = if (useGemini) key else "",
-            openAiApiKey = if (useGemini) "" else key,
+            openAiApiKey = if (alternate == "openai") key else "",
+            sakanaApiKey = if (alternate == "sakana") key else "",
             model = model,
             provider = alternate,
             openAiBaseUrl = settings.getBaseUrl()

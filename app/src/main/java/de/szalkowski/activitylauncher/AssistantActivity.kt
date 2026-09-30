@@ -370,20 +370,58 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun startVoiceInput() {
         binding.bubble.setState(AssistantBubbleView.State.LISTENING)
         binding.voiceStatus.setText(R.string.assistant_voice_listening)
-        val recognitionIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fa-IR")
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fa-IR")
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, false)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.assistant_voice_prompt))
-        }
-        if (recognitionIntent.resolveActivity(packageManager) == null) {
+        // In-app recognizer: listens inside the chat screen instead of
+        // opening the full-screen Google speech activity.
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             respond(getString(R.string.assistant_voice_unavailable))
             return
         }
-        runCatching { voiceInput.launch(recognitionIntent) }
+        val recognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fa-IR")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fa-IR")
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        }
+        recognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                binding.voiceStatus.setText(R.string.assistant_voice_listening)
+            }
+
+            override fun onBeginningOfSpeech() {}
+
+            override fun onRmsChanged(rmsdB: Float) {}
+
+            override fun onBufferReceived(buffer: ByteArray?) {}
+
+            override fun onEndOfSpeech() {
+                binding.voiceStatus.setText(R.string.assistant_voice_processing)
+            }
+
+            override fun onError(error: Int) {
+                binding.bubble.setState(AssistantBubbleView.State.READY)
+                binding.voiceStatus.setText(R.string.assistant_voice_no_result)
+                respond(getString(R.string.assistant_voice_no_result))
+            }
+
+            override fun onResults(results: Bundle?) {
+                val phrase = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                if (phrase != null) {
+                    binding.bubble.setState(AssistantBubbleView.State.THINKING)
+                    runCommand(phrase)
+                } else {
+                    binding.bubble.setState(AssistantBubbleView.State.READY)
+                    binding.voiceStatus.setText(R.string.assistant_voice_no_result)
+                    respond(getString(R.string.assistant_voice_no_result))
+                }
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {}
+
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+        runCatching { recognizer.startListening(intent) }
             .onFailure {
                 binding.bubble.setState(AssistantBubbleView.State.ERROR)
                 binding.voiceStatus.setText(R.string.assistant_voice_unavailable)
@@ -490,7 +528,6 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val command = rawCommand.normalizeUserText()
         return listOf(
             "تحقیق", "بررسی کن", "تحلیل کن", "تحلیل", "آخرین خبر", "اخبار", "چه خبر", "چخبر", "چهخبر",
-            "چی میشه", "چه میشه", "چطوره", "چرا", "چگونه", "چطور", "آیا", "؟", "?",
             "جنگ", "اقتصاد", "سیاست", "بازار", "قیمت", "آینده"
         ).any(command::contains)
     }
@@ -717,7 +754,11 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("چراغ قوه") || command.contains("چراغقوه") ||
                 command.contains("فلش گوشی") || command.contains("flashlight") || command.contains("torch") ->
                 toggleFlashlight(command)
-            command.contains("وای فای") || command.contains("وای‌فای") ||
+                        command.contains("کش گوشی") || command.contains("حافظه پنهان") || command.contains("پاک کردن کش") || command.contains("پاکسازی") -> {
+                respond("در حال باز کردن تنظیمات حافظه و پاک‌سازی کش...")
+                openSystemSettings(Settings.ACTION_INTERNAL_STORAGE_SETTINGS, "حافظه گوشی")
+            }
+            command.contains("وای فای") || command.contains("وای‌فای") || command.contains("وایفای") || command.contains("روشن کن وای") ||
                 command.contains("wifi") || command.contains("wi-fi") ->
                 openSystemSettings(Settings.ACTION_WIFI_SETTINGS, "تنظیمات وای‌فای")
             command.contains("بلوتوث") || command.contains("bluetooth") ->
@@ -967,7 +1008,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun offlineConversationReply(question: String): String =
-        "حرفت دربارهٔ «${question.take(80)}» را گرفتم. برای اینکه دقیق کمک کنم، بگو دنبال توضیح، مقایسه یا انجام یک کار هستی."
+        "الآن آنلاین نیستم، ولی حرفت را نشنیدم از دست نرفت: «${question.take(80)}». دوباره وصل که شدی همین را تکرار کن تا کامل جوابت را بدهم. یا اگر کار گوشی‌ای می‌خواهی، همین الان بگو تا انجامش بدهم."
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()

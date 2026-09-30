@@ -11,12 +11,19 @@ class SamOrchestratorTest {
     fun currentQuestionPrefersWebWhenAvailable() {
         val d = router.route("آخرین اخبار هوش مصنوعی چیست؟", true, true, true, true)
         assertEquals(SamRoute.WEB_RESEARCH, d.route)
+        assertTrue(d.specialists.any { it.id == "research" })
     }
 
     @Test
-    fun deepResearchUsesFugu() {
-        val d = router.route("یک تحقیق عمیق و مقایسه کامل انجام بده", true, true, true, false)
-        assertEquals(SamRoute.FUGU, d.route)
+    fun codingQuestionSelectsHandCoder() {
+        val d = router.route("برای من یک برنامه کدنویسی کن", true, true, false, false)
+        assertTrue(d.specialists.any { it.id == "coder" && it.organ == SamOrgan.HANDS })
+    }
+
+    @Test
+    fun artQuestionSelectsHeartArtist() {
+        val d = router.route("این عکس را هنری کن", true, true, false, false)
+        assertTrue(d.specialists.any { it.id == "artist" && it.organ == SamOrgan.HEART })
     }
 
     @Test
@@ -29,5 +36,6 @@ class SamOrchestratorTest {
     fun offlineFallbackWorks() {
         val d = router.route("سلام", true, false, false, false)
         assertEquals(SamRoute.LOCAL, d.route)
+        assertTrue(d.specialists.any { it.id == "reasoning" })
     }
 }

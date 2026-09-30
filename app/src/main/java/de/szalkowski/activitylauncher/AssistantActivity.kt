@@ -537,7 +537,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 hasCloud = cloudConfigured,
                 hasFugu = fuguConfigured,
                 webAvailable = packageManager.resolveActivity(
-                    Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com"))
+                    Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com")),
+                    PackageManager.MATCH_DEFAULT_ONLY
                 ) != null
             )
 
@@ -571,7 +572,6 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 else -> runCatching { agent.processCommand(rawCommand, agentContext) }
                     .getOrElse { AgentOutput("خطای اجرای Provider: ${it.message.orEmpty().take(140)}", success = false) }
             }
-                .getOrElse { AgentOutput("خطای اجرای Provider: ${it.message.orEmpty().take(140)}", success = false) }
             val primaryProvider = settings.getProvider()
             val fallback = if (!primary.success && settings.getMode() == "cloud") {
                 alternateProviderAgent(settings, primaryProvider)?.let { candidate ->

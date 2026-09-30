@@ -7,46 +7,95 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: 17
-        cache: 'gradle'
-    - name: Prepare Android keystore
-      run: echo ${{ secrets.ENCODEDKEYSTORE }} | base64 --decode > app/keystore.jks
-    - name: Download dependencies
-      run: ./gradlew androidDependencies
-    - name: Build release APK
-      run: ./gradlew assembleOssRelease
-      env:
-        APPID: de.szalkowski.activitylauncher.oss
-        KEYSTORE: keystore.jks
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTOREPASSWORD }}
-        KEY_ALIAS: de.szalkowski.activitylauncher.oss
-        KEY_PASSWORD: ${{ secrets.KEYPASSWORD }}
-    - name: Create Release
-      uses: actions/create-release@v1
-      id: create_release
-      with:
-        draft: false
-        prerelease: false
-        release_name: ${{ github.ref }}
-        tag_name: ${{ github.ref }}
-        body_path: whatsnew/whatsnew-en-GB
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-    - name: Upload Release APK
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: app/build/outputs/apk/oss/release/app-oss-release.apk
-        asset_name: ActivityLauncher-${{ github.ref_name }}.apk
-        asset_content_type: application/vnd.android.package-archive
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          cache: 'gradle'
+
+      - name: Prepare release keystore
+        shell: bash
+        env:
+          ENCODED_KEYSTORE: ${{ secrets.ENCODEDKEYSTORE }}
+          KEYSTORE_PASSWORD_SECRET: ${{ secrets.KEYSTOREPASSWORD }}
+          KEY_ALIAS_SECRET: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD_SECRET: ${{ secrets.KEYPASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="${GITHUB_WORKSPACE}/app/keystore.jks"
+
+          if [ -n "${ENCODED_KEYSTORE:-}" ]; then
+            echo "${ENCODED_KEYSTORE}" | base64 --decode > "${KEYSTORE_PATH}" || true
+          fi
+
+          if [ -s "${KEYSTORE_PATH}" ] && keytool -list -keystore "${KEYSTORE_PATH}" -storepass "${KEYSTORE_PASSWORD_SECRET:-}" >/dev/null 2>&1; then
+            echo "Using the configured release keystore."
+            {
+              echo "KEYSTORE=keystore.jks"
+              echo "KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD_SECRET}"
+              echo "KEY_ALIAS=${KEY_ALIAS_SECRET:-sam-release}"
+              echo "KEY_PASSWORD=${KEY_PASSWORD_SECRET:-${KEYSTORE_PASSWORD_SECRET}}"
+            } >> "${GITHUB_ENV}"
+          else
+            echo "::warning::Configured release keystore is missing or invalid. Generating a CI-only release key."
+            rm -f "${KEYSTORE_PATH}"
+            CI_PASSWORD="${GITHUB_RUN_ID}-SamRelease"
+            keytool -genkeypair -v \
+              -keystore "${KEYSTORE_PATH}" \
+              -storetype JKS \
+              -storepass "${CI_PASSWORD}" \
+              -keypass "${CI_PASSWORD}" \
+              -alias "sam-release" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=SAM Launcher,O=FGMembers,C=US"
+            {
+              echo "KEYSTORE=keystore.jks"
+              echo "KEYSTORE_PASSWORD=${CI_PASSWORD}"
+              echo "KEY_ALIAS=sam-release"
+              echo "KEY_PASSWORD=${CI_PASSWORD}"
+            } >> "${GITHUB_ENV}"
+          fi
+
+      - name: Download dependencies
+        run: ./gradlew androidDependencies
+
+      - name: Build release APK
+        run: ./gradlew assembleOssRelease
+        env:
+          APPID: com.fgmembers.samlauncher
+
+      - name: Verify signed APK
+        run: |
+          APK="app/build/outputs/apk/oss/release/app-oss-release.apk"
+          test -f "${APK}"
+          $ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner verify --verbose "${APK}"
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          release_name: SAM Launcher ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body_path: whatsnew/whatsnew-en-GB
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Upload Release APK
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: app/build/outputs/apk/oss/release/app-oss-release.apk
+          asset_name: SAM-Launcher-${{ github.ref_name }}.apk
+          asset_content_type: application/vnd.android.package-archive
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

@@ -33,6 +33,8 @@ class SecureAiSettings(context: Context) {
     fun getMode(): String = prefs.getString("mode", "local") ?: "local"
     fun setMode(value: String) = prefs.edit().putString("mode", value).apply()
 
+    fun isConfigured(provider: String): Boolean = get(provider).isNotBlank()
+
     private fun key(): SecretKey {
         val existing = runCatching {
             val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }

@@ -52,10 +52,11 @@ android {
             keyPassword = "android"
         }
         create("release") {
-            storeFile = file(System.getenv("KEYSTORE") ?: "keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
+            val releaseKeystore = System.getenv("KEYSTORE")?.takeIf { it.isNotBlank() } ?: "keystore.jks"
+            storeFile = file(releaseKeystore)
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: "sam-release"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD") ?: ""
         }
     }
     buildTypes {

@@ -108,12 +108,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val geminiKey = findPreference<EditTextPreference>("ai_gemini_key")!!
         val openAiKey = findPreference<EditTextPreference>("ai_openai_key")!!
+        val sakanaKey = findPreference<EditTextPreference>("ai_sakana_key")!!
         val baseUrl = findPreference<EditTextPreference>("ai_base_url")!!
         val model = findPreference<EditTextPreference>("ai_model")!!
         geminiKey.text = ""
         openAiKey.text = ""
+        sakanaKey.text = ""
         geminiKey.summary = if (secureAi.get("gemini").isBlank()) getString(R.string.ai_key_summary) else "•••••••• (configured)"
         openAiKey.summary = if (secureAi.get("openai").isBlank()) getString(R.string.ai_key_summary) else "•••••••• (configured)"
+        sakanaKey.summary = if (secureAi.get("sakana").isBlank()) getString(R.string.ai_key_summary) else "•••••••• (configured)"
         baseUrl.text = secureAi.getBaseUrl()
         model.text = secureAi.getModel()
         geminiKey.setOnPreferenceChangeListener { _, value ->
@@ -137,12 +140,25 @@ class SettingsFragment : PreferenceFragmentCompat() {
             openAiKey.summary = "•••••••• (configured)"
             false
         }
+        sakanaKey.setOnPreferenceChangeListener { _, value ->
+            secureAi.set("sakana", value as String)
+            if (value.isNotBlank()) {
+                secureAi.setProvider("sakana")
+                secureAi.setMode("cloud")
+                secureAi.setBaseUrl("https://api.sakana.ai/v1")
+                if (secureAi.getModel().isBlank() || secureAi.getModel().startsWith("gemini") || secureAi.getModel().startsWith("gpt-")) secureAi.setModel("fugu")
+                needsRestart = true
+            }
+            sakanaKey.summary = "•••••••• (configured)"
+            false
+        }
         baseUrl.setOnPreferenceChangeListener { _, value -> secureAi.setBaseUrl(value as String); true }
         model.setOnPreferenceChangeListener { _, value -> secureAi.setModel(value as String); true }
         findPreference<Preference>("ai_clear_keys")!!.setOnPreferenceClickListener {
-            secureAi.remove("gemini"); secureAi.remove("openai")
+            secureAi.remove("gemini"); secureAi.remove("openai"); secureAi.remove("sakana")
             geminiKey.summary = getString(R.string.ai_key_summary)
             openAiKey.summary = getString(R.string.ai_key_summary)
+            sakanaKey.summary = getString(R.string.ai_key_summary)
             Toast.makeText(requireContext(), getString(R.string.ai_keys_cleared), Toast.LENGTH_SHORT).show()
             true
         }

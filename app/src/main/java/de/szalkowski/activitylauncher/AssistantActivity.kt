@@ -524,7 +524,51 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         lifecycleScope.launch(Dispatchers.IO) {
             val agentContext = deviceContext()
             val settings = SecureAiSettings(this@AssistantActivity)
-            val primary = runCatching { agent.processCommand(rawCommand, agentContext) }
+            val fuguConfigured = settings.get("sakana").isConfigured()
+            val cloudConfigured = settings.get("gemini").isConfigured() ||
+                settings.get("openai").isConfigured() ||
+                BuildConfig.GEMINI_API_KEY.isConfigured() ||
+                BuildConfig.OPENAI_API_KEY.isConfigured()
+            val route = SamOrchestrator().route(
+                text = rawCommand,
+                hasLocal = true,
+                hasCloud = cloudConfigured,
+                hasFugu = fuguConfigured,
+                webAvailable = packageManager.resolveActivity(
+                    Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com"))
+                ) != null
+            )
+
+            // Current-information requests go through the existing research engine.
+            // Deep-research requests prefer Fugu when the user has connected it.
+            val primary = when (route.route) {
+                SamRoute.WEB_RESEARCH -> {
+                    val researched = runCatching { DeepResearchEngine().answer(rawCommand) }.getOrNull()
+                    if (!researched.isNullOrBlank()) {
+                        AgentOutput(
+                            reply = researched,
+                            responseTimeMs = 0,
+                            success = true,
+                            workflowSteps = listOf("web-research")
+                        )
+                    } else {
+                        runCatching { agent.processCommand(rawCommand, agentContext) }
+                            .getOrElse { AgentOutput("خطای اجرای Provider: ${it.message.orEmpty().take(140)}", success = false) }
+                    }
+                }
+                SamRoute.FUGU -> {
+                    val fuguAgent = alternateProviderAgent(settings, "sakana")
+                    if (fuguAgent != null) {
+                        runCatching { fuguAgent.processCommand(rawCommand, agentContext) }
+                            .getOrElse { AgentOutput("خطای اجرای Fugu: ${it.message.orEmpty().take(140)}", success = false) }
+                    } else {
+                        runCatching { agent.processCommand(rawCommand, agentContext) }
+                            .getOrElse { AgentOutput("خطای اجرای Provider: ${it.message.orEmpty().take(140)}", success = false) }
+                    }
+                }
+                else -> runCatching { agent.processCommand(rawCommand, agentContext) }
+                    .getOrElse { AgentOutput("خطای اجرای Provider: ${it.message.orEmpty().take(140)}", success = false) }
+            }
                 .getOrElse { AgentOutput("خطای اجرای Provider: ${it.message.orEmpty().take(140)}", success = false) }
             val primaryProvider = settings.getProvider()
             val fallback = if (!primary.success && settings.getMode() == "cloud") {

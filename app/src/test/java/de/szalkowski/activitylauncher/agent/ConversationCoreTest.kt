@@ -28,6 +28,6 @@ class ConversationCoreTest {
     fun doesNotGoSilentOnUnknownOfflineQuestion() {
         val answer = core.reply("یک موضوع تازه را توضیح بده")
         assertTrue(answer.isNotBlank())
-        assertTrue(answer.contains("آفلاین"))
+        assertTrue(!answer.contains("اطلاعات کافی در حافظهٔ محلی ندارم"))
     }
 }

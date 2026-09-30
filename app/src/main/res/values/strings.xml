@@ -130,6 +130,7 @@
     <string name="ai_provider_title">Active provider</string>
     <string name="ai_gemini_key_title">Gemini API key</string>
     <string name="ai_openai_key_title">OpenAI API key</string>
+    <string name="ai_sakana_key_title">Sakana Fugu API key</string>
     <string name="ai_key_summary">Stored encrypted on this device; not bundled in the APK.</string>
     <string name="ai_base_url_title">Custom API base URL</string>
     <string name="ai_base_url_summary">For OpenAI-compatible services, for example https://api.example.com/v1</string>

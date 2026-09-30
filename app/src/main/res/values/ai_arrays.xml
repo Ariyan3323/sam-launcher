@@ -13,11 +13,13 @@
     <string-array name="ai_provider_entries">
         <item>OpenAI</item>
         <item>Gemini</item>
+        <item>Sakana Fugu</item>
         <item>OpenAI-compatible / Custom</item>
     </string-array>
     <string-array name="ai_provider_values">
         <item>openai</item>
         <item>gemini</item>
+        <item>sakana</item>
         <item>custom</item>
     </string-array>
 </resources>

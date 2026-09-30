@@ -29,11 +29,13 @@ data class AgentConfig(
         از عبارت‌های کلیشه‌ای، گزارش‌دادن روند فکر، تکرار پیام‌های قبلی و لحن اداری پرهیز کن.
         حریم خصوصی مقدم است؛ داده حساس را فقط برای اجرای همان درخواست مصرف کن.
     """.trimIndent(),
-    val geminiApiKey: String = "YOUR_GEMINI_API_KEY_HERE",
+    val geminiApiKey: String = "",
     val openAiApiKey: String = "",
-    val model: String = "gemini-3.6-flash",
+    val sakanaApiKey: String = "",
+    val model: String = "gemini-2.5-flash",
     val provider: String = "gemini",
     val openAiBaseUrl: String = "https://api.openai.com/v1",
+    val sakanaBaseUrl: String = "https://api.sakana.ai/v1",
     val maxMemoryTurns: Int = 10
 )
 
@@ -212,6 +214,9 @@ class LlmClient(private val config: AgentConfig) {
         if (config.provider == "openai" || config.provider == "custom") {
             return@withContext openAiChat(userMessage, memory, contextInfo)
         }
+        if (config.provider == "sakana") {
+            return@withContext sakanaChat(userMessage, memory, contextInfo)
+        }
         val contents = JSONArray()
 
         contents.put(JSONObject().apply {
@@ -268,6 +273,85 @@ class LlmClient(private val config: AgentConfig) {
         val geminiResponse = parseResponse(responseBody, responseCode == 200)
         if (geminiResponse.successful || config.openAiApiKey.isBlank()) return@withContext geminiResponse
         return@withContext openAiChat(userMessage, memory, contextInfo)
+    }
+
+
+    /**
+     * Sakana Fugu is exposed through an OpenAI-compatible API. Fugu itself
+     * orchestrates multiple models/agents, so SAM can use collective reasoning
+     * without coupling the app to one underlying model.
+     */
+    private fun sakanaChat(userMessage: String, memory: AgentMemory, contextInfo: String): AgentResponse {
+        return openAiCompatibleChat(
+            apiKey = config.sakanaApiKey,
+            baseUrl = config.sakanaBaseUrl,
+            model = config.model.ifBlank { "fugu" },
+            userMessage = userMessage,
+            memory = memory,
+            contextInfo = contextInfo,
+            providerName = "Sakana Fugu"
+        )
+    }
+
+    private fun openAiCompatibleChat(
+        apiKey: String,
+        baseUrl: String,
+        model: String,
+        userMessage: String,
+        memory: AgentMemory,
+        contextInfo: String,
+        providerName: String
+    ): AgentResponse {
+        return runCatching {
+            val messages = JSONArray().apply {
+                put(JSONObject().apply {
+                    put("role", "system")
+                    put("content", "${config.personality}\n\nوضعیت دستگاه: $contextInfo")
+                })
+                memory.getHistory().forEach { message ->
+                    put(JSONObject().apply {
+                        put("role", if (message.role == "model") "assistant" else message.role)
+                        put("content", message.content)
+                    })
+                }
+            }
+            val body = JSONObject().apply {
+                put("model", model)
+                put("messages", messages)
+                put("temperature", 0.7)
+                put("max_tokens", 768)
+            }
+            val conn = (URL("${baseUrl.trimEnd('/')}/chat/completions").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("Accept", "application/json")
+                setRequestProperty("Authorization", "Bearer $apiKey")
+                connectTimeout = 10_000
+                readTimeout = 60_000
+                doOutput = true
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+            val code = conn.responseCode
+            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+            val responseBody = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            conn.disconnect()
+            if (code !in 200..299) {
+                val detail = runCatching { JSONObject(responseBody).optJSONObject("error")?.optString("message") }.getOrNull().orEmpty()
+                val friendly = when (code) {
+                    401 -> "کلید $providerName معتبر نیست یا دسترسی آن فعال نیست."
+                    403 -> "دسترسی $providerName برای این کلید مجاز نیست."
+                    404 -> "مدل یا آدرس API در $providerName پیدا نشد."
+                    429 -> "سهمیه یا اعتبار $providerName تمام شده است."
+                    else -> if (detail.isNotBlank()) "$providerName خطا داد: ${detail.take(180)}" else "$providerName با کد خطای $code پاسخ داد."
+                }
+                return AgentResponse(friendly, false, successful = false)
+            }
+            val text = JSONObject(responseBody).optJSONArray("choices")
+                ?.optJSONObject(0)?.optJSONObject("message")?.optString("content").orEmpty()
+            AgentResponse(text.ifBlank { "از $providerName پاسخ متنی دریافت نشد." }, false)
+        }.getOrElse {
+            AgentResponse("اتصال به $providerName برقرار نشد.", false, successful = false)
+        }
     }
 
     private fun openAiChat(userMessage: String, memory: AgentMemory, contextInfo: String): AgentResponse {

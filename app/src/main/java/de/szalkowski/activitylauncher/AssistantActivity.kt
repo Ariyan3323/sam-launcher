@@ -109,6 +109,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var composeBatteryPercent by mutableStateOf(0)
     private var composeMascotState by mutableStateOf(MascotState.Idle)
     private var composeOnline by mutableStateOf(false)
+    private var composeIsListening by mutableStateOf(false)
     private lateinit var mechanicalSfx: MechanicalSfx
 
     private val smsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -216,10 +217,6 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         userProfileRepository = UserProfileRepository(AppDatabase.get(this).userProfileDao())
         appManagerRepository = AppManagerRepository(this)
         val aiSettings = SecureAiSettings(this)
-        if (hasConfiguredAiProvider() && aiSettings.getMode() == "local") {
-            aiSettings.setMode("cloud")
-        }
-        composeOnline = hasConfiguredAiProvider() && isNetworkAvailable()
         val provider = aiSettings.getProvider()
         configuredAiProvider = provider
         val storedGemini = aiSettings.get("gemini")
@@ -277,6 +274,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             ModernChatScreen(
                 messages = composeMessages,
                 isOnline = composeOnline,
+                isListening = composeIsListening,
                 batteryPercent = composeBatteryPercent,
                 status = getString(R.string.assistant_agent_ready),
                 mascotState = composeMascotState,
@@ -309,10 +307,6 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onResume()
         if (::agent.isInitialized) {
             val settings = SecureAiSettings(this)
-            if (hasConfiguredAiProvider() && settings.getMode() == "local") {
-                settings.setMode("cloud")
-            }
-            composeOnline = hasConfiguredAiProvider() && isNetworkAvailable()
             val provider = settings.getProvider()
             if (provider != configuredAiProvider || aiFingerprint(settings) != configuredAiFingerprint) recreate()
             updateAgentStatus()
@@ -378,6 +372,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun startVoiceInput() {
+        composeIsListening = true
         binding.bubble.setState(AssistantBubbleView.State.LISTENING)
         binding.voiceStatus.setText(R.string.assistant_voice_listening)
         // In-app recognizer: listens inside the chat screen instead of
@@ -406,16 +401,19 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onBufferReceived(buffer: ByteArray?) {}
 
             override fun onEndOfSpeech() {
+                composeIsListening = false
                 binding.voiceStatus.setText(R.string.assistant_voice_processing)
             }
 
             override fun onError(error: Int) {
+                composeIsListening = false
                 binding.bubble.setState(AssistantBubbleView.State.READY)
                 binding.voiceStatus.setText(R.string.assistant_voice_no_result)
                 respond(getString(R.string.assistant_voice_no_result))
             }
 
             override fun onResults(results: Bundle?) {
+                composeIsListening = false
                 val phrase = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
                 if (phrase != null) {
                     binding.bubble.setState(AssistantBubbleView.State.THINKING)
@@ -433,6 +431,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         })
         runCatching { recognizer.startListening(intent) }
             .onFailure {
+                composeIsListening = false
                 binding.bubble.setState(AssistantBubbleView.State.ERROR)
                 binding.voiceStatus.setText(R.string.assistant_voice_unavailable)
                 respond(getString(R.string.assistant_voice_unavailable))
@@ -725,7 +724,6 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun updateAgentStatus(success: Boolean? = null) {
-        composeOnline = hasConfiguredAiProvider() && isNetworkAvailable()
         val provider = SecureAiSettings(this).getProvider()
         binding.agentStatus.text = when {
             success == false -> getString(R.string.assistant_agent_error)
@@ -1018,13 +1016,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun offlineConversationReply(question: String): String {
-        // Always answer from the on-device knowledge layer first.
-        // Never ask the user to "come back online" for ordinary conversation.
-        val local = conversationCore.reply(question).trim()
-        if (local.isNotBlank()) return local
-        return "دربارهٔ «${question.take(70)}» بگو دنبال توضیح هستی یا کار گوشی، تا از همین‌جا شروع کنیم."
-    }
+    private fun offlineConversationReply(question: String): String =
+        "الآن آنلاین نیستم، ولی حرفت را نشنیدم از دست نرفت: «${question.take(80)}». دوباره وصل که شدی همین را تکرار کن تا کامل جوابت را بدهم. یا اگر کار گوشی‌ای می‌خواهی، همین الان بگو تا انجامش بدهم."
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()

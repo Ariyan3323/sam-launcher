@@ -1,6 +1,9 @@
 package com.fgmembers.samlauncher.ui.chat
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.scale
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -36,6 +39,7 @@ fun ModernChatScreen(
     batteryPercent: Int,
     status: String,
     mascotState: MascotState = MascotState.Idle,
+    isListening: Boolean = false,
     onSend: (String) -> Unit,
     onVoice: () -> Unit,
     onAttachment: () -> Unit,
@@ -243,13 +247,49 @@ fun ModernChatScreen(
                         )
                     )
 
-                    // Voice Mic Button
+                    // Voice Mic Button with glowing recording animation
+                    val infiniteTransition = rememberInfiniteTransition(label = "mic_glow")
+                    val glowScale by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = if (isListening) 1.25f else 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(600, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "glow_scale"
+                    )
+                    val glowAlpha by infiniteTransition.animateFloat(
+                        initialValue = 0.4f,
+                        targetValue = if (isListening) 0.9f else 0.4f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(600, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "glow_alpha"
+                    )
+
                     IconButton(
-                        onClick = onVoice
+                        onClick = onVoice,
+                        modifier = Modifier
+                            .scale(if (isListening) glowScale else 1f)
+                            .then(
+                                if (isListening) {
+                                    Modifier
+                                        .background(
+                                            color = Color(0xFFFF3366).copy(alpha = glowAlpha * 0.35f),
+                                            shape = CircleShape
+                                        )
+                                        .border(
+                                            width = 2.dp,
+                                            color = Color(0xFFFF3366).copy(alpha = glowAlpha),
+                                            shape = CircleShape
+                                        )
+                                } else Modifier
+                            )
                     ) {
                         Text(
-                            text = "🎤",
-                            fontSize = 20.sp
+                            text = if (isListening) "🎙️" else "🎤",
+                            fontSize = if (isListening) 22.sp else 20.sp
                         )
                     }
 

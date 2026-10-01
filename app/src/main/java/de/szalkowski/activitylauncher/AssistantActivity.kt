@@ -217,6 +217,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         userProfileRepository = UserProfileRepository(AppDatabase.get(this).userProfileDao())
         appManagerRepository = AppManagerRepository(this)
         val aiSettings = SecureAiSettings(this)
+        if (hasConfiguredAiProvider() && aiSettings.getMode() == "local") {
+            aiSettings.setMode("cloud")
+        }
+        composeOnline = isNetworkAvailable()
         val provider = aiSettings.getProvider()
         configuredAiProvider = provider
         val storedGemini = aiSettings.get("gemini")
@@ -307,6 +311,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onResume()
         if (::agent.isInitialized) {
             val settings = SecureAiSettings(this)
+            if (hasConfiguredAiProvider() && settings.getMode() == "local") {
+                settings.setMode("cloud")
+            }
+            composeOnline = isNetworkAvailable()
             val provider = settings.getProvider()
             if (provider != configuredAiProvider || aiFingerprint(settings) != configuredAiFingerprint) recreate()
             updateAgentStatus()
@@ -530,7 +538,8 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun isNetworkAvailable(): Boolean {
         val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
         val network = manager.activeNetwork ?: return false
-        return manager.getNetworkCapabilities(network)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+        val caps = manager.getNetworkCapabilities(network) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
     private fun isResearchRequest(rawCommand: String): Boolean {
@@ -724,6 +733,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun updateAgentStatus(success: Boolean? = null) {
+        composeOnline = isNetworkAvailable()
         val provider = SecureAiSettings(this).getProvider()
         binding.agentStatus.text = when {
             success == false -> getString(R.string.assistant_agent_error)
@@ -1016,8 +1026,11 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun offlineConversationReply(question: String): String =
-        "الآن آنلاین نیستم، ولی حرفت را نشنیدم از دست نرفت: «${question.take(80)}». دوباره وصل که شدی همین را تکرار کن تا کامل جوابت را بدهم. یا اگر کار گوشی‌ای می‌خواهی، همین الان بگو تا انجامش بدهم."
+    private fun offlineConversationReply(question: String): String {
+        val local = conversationCore.reply(question).trim()
+        if (local.isNotBlank() && !local.contains("آنلاین نیستم")) return local
+        return "من در کنارت هستم؛ دربارهٔ «${question.take(60)}» نظرم اینه که باید شرایط و اولویت‌هات رو بسنجیم. بگو هدفت بیشتر چیه تا دقیق‌تر همفکری کنیم!"
+    }
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()

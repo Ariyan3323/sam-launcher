@@ -216,6 +216,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         userProfileRepository = UserProfileRepository(AppDatabase.get(this).userProfileDao())
         appManagerRepository = AppManagerRepository(this)
         val aiSettings = SecureAiSettings(this)
+        if (hasConfiguredAiProvider() && aiSettings.getMode() == "local") {
+            aiSettings.setMode("cloud")
+        }
+        composeOnline = hasConfiguredAiProvider() && isNetworkAvailable()
         val provider = aiSettings.getProvider()
         configuredAiProvider = provider
         val storedGemini = aiSettings.get("gemini")
@@ -305,6 +309,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onResume()
         if (::agent.isInitialized) {
             val settings = SecureAiSettings(this)
+            if (hasConfiguredAiProvider() && settings.getMode() == "local") {
+                settings.setMode("cloud")
+            }
+            composeOnline = hasConfiguredAiProvider() && isNetworkAvailable()
             val provider = settings.getProvider()
             if (provider != configuredAiProvider || aiFingerprint(settings) != configuredAiFingerprint) recreate()
             updateAgentStatus()
@@ -717,6 +725,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun updateAgentStatus(success: Boolean? = null) {
+        composeOnline = hasConfiguredAiProvider() && isNetworkAvailable()
         val provider = SecureAiSettings(this).getProvider()
         binding.agentStatus.text = when {
             success == false -> getString(R.string.assistant_agent_error)
@@ -1009,8 +1018,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun offlineConversationReply(question: String): String =
-        "الآن آنلاین نیستم، ولی حرفت را نشنیدم از دست نرفت: «${question.take(80)}». دوباره وصل که شدی همین را تکرار کن تا کامل جوابت را بدهم. یا اگر کار گوشی‌ای می‌خواهی، همین الان بگو تا انجامش بدهم."
+    private fun offlineConversationReply(question: String): String {
+        // Always answer from the on-device knowledge layer first.
+        // Never ask the user to "come back online" for ordinary conversation.
+        val local = conversationCore.reply(question).trim()
+        if (local.isNotBlank()) return local
+        return "دربارهٔ «${question.take(70)}» بگو دنبال توضیح هستی یا کار گوشی، تا از همین‌جا شروع کنیم."
+    }
 
     private fun extractSearchQuery(command: String): String {
         val input = command.trim()

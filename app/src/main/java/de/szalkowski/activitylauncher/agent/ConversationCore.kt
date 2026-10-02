@@ -120,7 +120,7 @@ class ConversationCore(private val knowledge: OfflineKnowledgeStore? = null) {
             }
         }
 
-        val mathRegex = Regex("([0-9۰-۹]+)\\s*([+*xX×\-÷/]|به علاوه|ضربدر|منهای|تقسیم بر)\\s*([0-9۰-۹]+)")
+        val mathRegex = Regex("""([0-9۰-۹]+)\\s*([-+*xX×÷/]|به علاوه|ضربدر|منهای|تقسیم بر)\\s*([0-9۰-۹]+)""")
         val match = mathRegex.find(original)
         if (match != null) {
             val a = parsePersianDigits(match.groupValues[1])

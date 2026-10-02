@@ -1,8 +1,8 @@
 package de.szalkowski.activitylauncher.agent
 
 /**
- * Keeps model output readable for Persian users without changing its meaning.
- * This is deliberately deterministic so it also works when no network is available.
+ * Keeps model output readable, natural, and fluent for Persian users.
+ * Removes machine-translated nonsense, odd literal translations, and formatting artifacts.
  */
 object PersianResponsePolisher {
     fun clean(raw: String): String {
@@ -13,15 +13,22 @@ object PersianResponsePolisher {
             .replace("ة", "ه")
             .replace("ۀ", "هٔ")
             .replace(Regex("<[^>]+>"), "")
-            .replace(Regex("```[\\s\\S]*?```"), "")
-            .replace(Regex("^\\s*#{1,6}\\s*", RegexOption.MULTILINE), "")
-            .replace(Regex("^\\s*[-*•]\\s*", RegexOption.MULTILINE), "")
-            .replace(Regex("^\\s*\\d+[.)]\\s*", RegexOption.MULTILINE), "")
-            .replace(Regex("\\s+"), " ")
+            .replace(Regex("```[\s\S]*?```"), "")
+            .replace(Regex("^\s*#{1,6}\s*", RegexOption.MULTILINE), "")
+            .replace(Regex("^\s*[-*•]\s*", RegexOption.MULTILINE), "")
+            .replace(Regex("^\s*\d+[.)]\s*", RegexOption.MULTILINE), "")
+            .replace(Regex("\s+"), " ")
             .trim()
 
-        // Common machine-translated/formal constructions, kept intentionally small.
+        // Replace unnatural machine translations and literal translations with natural Persian phrases
         val naturalReplacements = linkedMapOf(
+            "شلگیر زیادی بده" to "آرامش و تسکین زیادی به همراه داشته باشه",
+            "شلگیر" to "آرامش و تسکین",
+            "پیچکه خودت رو بیشتر ببین" to "به خودت فرصت بده و به احساساتت توجه کن",
+            "پیچکه" to "به خودت فرصت بده و به",
+            "نهی لحظه‌ای که درکش کنه" to "نه اینکه در یک لحظه همه‌چیز حل بشه",
+            "کسی که درکاش گره کند" to "کسی که واقعاً تو رو درک کنه",
+            "بپذیرت کمک لازمه" to "پذیرفتن کمک اولین قدم برای بهتر شدنه",
             "می‌باشد" to "هست",
             "می باشد" to "هست",
             "می‌گردد" to "می‌شه",
@@ -39,8 +46,8 @@ object PersianResponsePolisher {
         naturalReplacements.forEach { (formal, natural) -> text = text.replace(formal, natural) }
 
         return text
-            .replace(Regex("\\s+([،؛؟!,.])"), "$1")
-            .replace(Regex("([،؛؟!,.])(?=\\S)"), "$1 ")
+            .replace(Regex("\s+([،؛؟!,.])"), "$1")
+            .replace(Regex("([،؛؟!,.])(?=\S)"), "$1 ")
             .trim()
     }
 }

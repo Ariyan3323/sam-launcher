@@ -574,6 +574,13 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun runAgentCommand(rawCommand: String) {
+        if (!isNetworkAvailable()) {
+            val offlineReply = offlineConversationReply(rawCommand)
+            binding.bubble.setState(AssistantBubbleView.State.READY)
+            composeMascotState = MascotState.Speaking
+            respond(offlineReply)
+            return
+        }
         composeMascotState = MascotState.Thinking
         binding.bubble.setState(AssistantBubbleView.State.THINKING)
         binding.agentStatus.setText(R.string.assistant_thinking)
@@ -726,7 +733,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun shouldCacheKnowledge(question: String, answer: String): Boolean {
-        if (answer.isBlank() || !PreferenceManager.getDefaultSharedPreferences(this)
+        if (answer.isBlank() || SamAgentEngine.looksLikeError(answer) || !PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean("ai_auto_refresh", false)) return false
         val sensitive = listOf("پیامک", "sms", "جیمیل", "gmail", "ایمیل", "email", "رمز", "password", "بانک", "bank", "تلگرام", "telegram")
         return sensitive.none(question.lowercase(Locale.ROOT)::contains)
@@ -1003,7 +1010,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             respond(getString(R.string.assistant_help))
             return
         }
-        if (!PreferenceManager.getDefaultSharedPreferences(this)
+        if (!isNetworkAvailable() || !PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean("ai_web_answers", true)) {
             respond(offlineConversationReply(cleanQuestion))
             return
@@ -1014,10 +1021,10 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         lifecycleScope.launch(Dispatchers.IO) {
             val answer = runCatching {
                 when (val result = knowledgeEngine.processQuery(cleanQuestion, allowWeb = true)) {
-                    is EngineResponse.Text -> result.message
-                    is EngineResponse.Action -> if (result.actionType == "OPEN_SETTINGS") "تنظیمات را باز کن." else ""
+                    is EngineResponse.Text -> result.message.takeIf { it.isNotBlank() && !SamAgentEngine.looksLikeError(it) }
+                    is EngineResponse.Action -> if (result.actionType == "OPEN_SETTINGS") "تنظیمات را باز کن." else null
                 }
-            }.getOrNull()?.takeIf { it.isNotBlank() }
+            }.getOrNull()?.takeIf { !it.isNullOrBlank() }
             withContext(Dispatchers.Main) {
                 binding.bubble.setState(AssistantBubbleView.State.READY)
                 if (answer != null) respond(answer)

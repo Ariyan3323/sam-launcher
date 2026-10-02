@@ -38,10 +38,11 @@ class SamAgentEngine(private val context: Context) {
         if (!allowWeb || !isNetworkUsable()) return EngineResponse.Text("")
 
         val fetched = webSearchTool.searchWeb(query)
-        if (fetched.isNotBlank() && !fetched.contains("انجام نشد") && !looksLikeError(fetched)) {
-            knowledgeDao.saveKnowledge(KnowledgeEntity(topic = query, content = fetched))
-            longTermMemory.remember("web_summary", query, fetched, "web-search")
+        if (fetched.isBlank() || fetched.contains("انجام نشد") || looksLikeError(fetched)) {
+            return EngineResponse.Text("")
         }
+        knowledgeDao.saveKnowledge(KnowledgeEntity(topic = query, content = fetched))
+        longTermMemory.remember("web_summary", query, fetched, "web-search")
         return EngineResponse.Text(fetched)
     }
 

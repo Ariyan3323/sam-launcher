@@ -13,11 +13,11 @@ object PersianResponsePolisher {
             .replace("ة", "ه")
             .replace("ۀ", "هٔ")
             .replace(Regex("<[^>]+>"), "")
-            .replace(Regex("```[\s\S]*?```"), "")
-            .replace(Regex("^\s*#{1,6}\s*", RegexOption.MULTILINE), "")
-            .replace(Regex("^\s*[-*•]\s*", RegexOption.MULTILINE), "")
-            .replace(Regex("^\s*\d+[.)]\s*", RegexOption.MULTILINE), "")
-            .replace(Regex("\s+"), " ")
+            .replace(Regex("```[\\s\\S]*?```"), "")
+            .replace(Regex("^\\s*#{1,6}\\s*", RegexOption.MULTILINE), "")
+            .replace(Regex("^\\s*[-*•]\\s*", RegexOption.MULTILINE), "")
+            .replace(Regex("^\\s*\\d+[.)]\\s*", RegexOption.MULTILINE), "")
+            .replace(Regex("\\s+"), " ")
             .trim()
 
         // Replace unnatural machine translations and literal translations with natural Persian phrases
@@ -46,8 +46,8 @@ object PersianResponsePolisher {
         naturalReplacements.forEach { (formal, natural) -> text = text.replace(formal, natural) }
 
         return text
-            .replace(Regex("\s+([،؛؟!,.])"), "$1")
-            .replace(Regex("([،؛؟!,.])(?=\S)"), "$1 ")
+            .replace(Regex("\\s+([،؛؟!,.])"), "$1")
+            .replace(Regex("([،؛؟!,.])(?=\\S)"), "$1 ")
             .trim()
     }
 }

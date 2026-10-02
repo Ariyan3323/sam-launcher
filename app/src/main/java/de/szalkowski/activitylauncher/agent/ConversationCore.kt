@@ -175,7 +175,7 @@ class ConversationCore(private val knowledge: OfflineKnowledgeStore? = null) {
         .replace("ة", "ه").replace("ۀ", "ه")
         .replace("أ", "ا").replace("إ", "ا").replace("آ", "ا")
         .replace(Regex("[ً-ٰٟ]"), "")
-        .replace(Regex("[\\u200c_\\-]+"), " ")
+        .replace(Regex("[-_\\u200c]+"), " ")
         .replace(Regex("[؟!.,،؛]+"), "")
         .replace(Regex("\\s+"), " ")
         .trim()

@@ -212,7 +212,7 @@ class AssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         personalMemory = PersonalMemory(this)
         privacyGuard = PrivacyGuard(this)
         offlineKnowledge = OfflineKnowledgeStore(this)
-        conversationCore = ConversationCore(offlineKnowledge)
+        conversationCore = ConversationCore(offlineKnowledge, personalMemory)
         knowledgeEngine = SamAgentEngine(this)
         userProfileRepository = UserProfileRepository(AppDatabase.get(this).userProfileDao())
         appManagerRepository = AppManagerRepository(this)

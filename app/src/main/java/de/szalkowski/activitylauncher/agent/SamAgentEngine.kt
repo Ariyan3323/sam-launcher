@@ -25,16 +25,20 @@ class SamAgentEngine(private val context: Context) {
             return EngineResponse.Action("OPEN_SETTINGS")
         }
 
-        longTermMemory.search(query, 3).firstOrNull()?.let {
-            return EngineResponse.Text("دانش ذخیره‌شده: ${it.content}")
-        }
-        knowledgeDao.findKnowledge(query)?.takeIf { it.isNotBlank() }?.let {
+        // Never surface a stale error message cached from a previous network failure:
+        // entries that contain provider or DNS error text are skipped, not shown.
+        longTermMemory.search(query, 3)
+            .firstOrNull { entry -> !looksLikeError(entry.content) }
+            ?.let {
+                return EngineResponse.Text("دانش ذخیره‌شده: ${it.content}")
+            }
+        knowledgeDao.findKnowledge(query)?.takeIf { it.isNotBlank() && !looksLikeError(it) }?.let {
             return EngineResponse.Text("دانش ذخیره‌شده: $it")
         }
-        if (!allowWeb || !hasValidatedInternet()) return EngineResponse.Text("")
+        if (!allowWeb || !isNetworkUsable()) return EngineResponse.Text("")
 
         val fetched = webSearchTool.searchWeb(query)
-        if (fetched.isNotBlank() && !fetched.contains("انجام نشد")) {
+        if (fetched.isNotBlank() && !fetched.contains("انجام نشد") && !looksLikeError(fetched)) {
             knowledgeDao.saveKnowledge(KnowledgeEntity(topic = query, content = fetched))
             longTermMemory.remember("web_summary", query, fetched, "web-search")
         }
@@ -51,6 +55,24 @@ class SamAgentEngine(private val context: Context) {
         } else {
             @Suppress("DEPRECATION")
             connectivity.activeNetworkInfo?.isConnectedOrConnecting == true
+        }
+    }
+
+    private fun isNetworkUsable(): Boolean {
+        if (!hasValidatedInternet()) return false
+        return runCatching { java.net.InetAddress.getByName("google.com").hostAddress != null }.getOrDefault(false)
+    }
+
+    companion object {
+        val ERROR_MARKERS = listOf(
+            "خطا", "خطای", "Unable to resolve", "No address associated",
+            "Exception", "failed to connect", "timeout", "UnknownHost",
+            "EXECUTION FAILED"
+        )
+
+        fun looksLikeError(text: String): Boolean {
+            val t = text.lowercase()
+            return ERROR_MARKERS.any { t.contains(it.lowercase()) }
         }
     }
 }

@@ -13,10 +13,36 @@ class ConversationCore(
 ) {
     private val recentTopics = ArrayDeque<String>()
 
-    fun reply(input: String): String {
+    
+    fun reply(input: String, persona: SamPersona? = null, imageCategory: ImageCategory? = null): String {
         val original = input.trim()
         val text = normalize(original)
-        if (text.isBlank()) return "من اینجام؛ هر چی تو دلته بگو تا با هم گپ بزنیم!"
+        val activePersona = persona ?: SamPersonaDetector.detect(original, imageCategory)
+
+        if (imageCategory != null) {
+            return when (imageCategory) {
+                ImageCategory.BOOK_OR_HOMEWORK -> polish(
+                    "تصویر کتاب یا مشق درسی دریافت شد 🎓\nدر نقش مدرس آماده‌ام: متن یا سوال درس را دقیق می‌بینم. بگو می‌خواهی مسئله را گام‌به‌گام با فرمول حل کنیم، مفهومش را درس بدهم یا خلاصه و معانی را برایت بگویم؟"
+                )
+                ImageCategory.INVOICE -> polish(
+                    "تصویر فاکتور یا صورت‌حساب دریافت شد 📊\nدر نقش تحلیل‌گر و حسابرس بررسی می‌کنم: اقلام، مبالغ ردیف‌ها، جمع کل و مالیات بر ارزش افزوده در حال سنجش است. اگر اختلاف یا جمع مشخصی مد نظرت است بگو تا موشکافی کنم."
+                )
+                ImageCategory.CHART -> polish(
+                    "تصویر نمودار و چارت تحلیلی دریافت شد 📈\nدر نقش تحلیل‌گر تکنیکال: کندل‌ها، سطوح حمایت و مقاومت و روند حرکتی بازار را بررسی می‌کنم. بازهٔ زمانی و نماد را بگو تا دیدگاه تحلیلی شفاف بهت بدهم."
+                )
+                ImageCategory.GENERAL -> polish(
+                    "تصویر دریافت شد. بگو درباره این عکس چه کمکی یا توضیحی از من می‌خواهی؟"
+                )
+            }
+        }
+
+        if (text.isBlank()) {
+            return when (activePersona) {
+                SamPersona.FRIEND -> "من اینجام رفیق؛ هر چی تو دلته بگو تا با هم گپ بزنیم!"
+                SamPersona.TEACHER -> "در خدمت شما هستم؛ سوال درسی، علمی یا مبحث آموزشی مد نظرتان را مطرح کنید."
+                SamPersona.ANALYST -> "آماده‌ام؛ موضوع مالی، فاکتور، بازار یا تحلیل حقوقی مورد نظر را بفرمایید."
+            }
+        }
         rememberTopic(text)
 
         // 1) Handle personal name recognition and storage
@@ -31,8 +57,10 @@ class ConversationCore(
         }
 
         // 3) Human conversational logic with emotional depth, curriculum & math
-        return polish(matchBuiltIn(text, original))
+        val baseAnswer = matchBuiltIn(text, original)
+        return polish(baseAnswer)
     }
+
 
     fun contextSummary(): String = recentTopics.joinToString(" | ")
 

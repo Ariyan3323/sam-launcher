@@ -9,20 +9,46 @@ import java.net.URL
 import java.net.URLEncoder
 
 /**
- * Connected chat fallback for natural conversation when no user provider key is configured.
- * Phone actions never use this client; they remain on the native command router.
+ * Connected chat fallback for natural conversation with dynamic personas and multimedia vision support.
  */
 class OnlineConversationClient {
     private val freeEndpoint = "https://text.pollinations.ai/"
 
     suspend fun answer(userText: String): String? = withContext(Dispatchers.IO) {
-        answer(userText, null)
+        answer(userText, null, SamPersona.FRIEND, null)
     }
 
-    suspend fun answer(userText: String, researchContext: String?): String? = withContext(Dispatchers.IO) {
+    suspend fun answer(
+        userText: String,
+        researchContext: String? = null,
+        persona: SamPersona = SamPersona.FRIEND,
+        imageNote: String? = null
+    ): String? = withContext(Dispatchers.IO) {
         val prompt = userText.trim()
-        if (prompt.isBlank()) return@withContext null
-        
+        if (prompt.isBlank() && imageNote.isNullOrBlank()) return@withContext null
+
+        val systemPrompt = persona.systemPrompt
+
+        val fullUserPrompt = buildString {
+            if (!imageNote.isNullOrBlank()) {
+                append("[بررسی تصویر ضمیمه‌شده: $imageNote]
+
+")
+            }
+            if (prompt.isNotBlank()) {
+                append("پیام کاربر: $prompt
+
+")
+            }
+            if (!researchContext.isNullOrBlank()) {
+                append("اطلاعات تکمیلی:
+$researchContext
+
+")
+            }
+            append("پاسخ را دقیق، با لحن مشخص‌شدهٔ نقش خودت و به فارسی روان بگو.")
+        }
+
         // Try JSON POST first
         val postResult = runCatching {
             val connection = (URL(freeEndpoint).openConnection() as HttpURLConnection).apply {
@@ -37,11 +63,10 @@ class OnlineConversationClient {
                 put("model", "openai")
                 put("messages", JSONArray().put(JSONObject().apply {
                     put("role", "system")
-                    put("content", "تو سام هستی؛ دستیار هوشمند و رفیق صمیمی. فارسی را فوق‌العاده روان، طبیعی و صمیمی صحبت کن. در ۲ الی ۴ جمله پاسخ شفاف، عمیق و دوستانه بده. هیچ قالب خشک، جدول یا متون رباتی نده.")
+                    put("content", systemPrompt)
                 }).put(JSONObject().apply {
                     put("role", "user")
-                    put("content", if (researchContext.isNullOrBlank()) prompt else
-                        "پرسش کاربر: $prompt\n\nاطلاعات مرتبط:\n$researchContext\n\nپاسخ را خلاصه و دوستانه بگو.")
+                    put("content", fullUserPrompt)
                 }))
             }.toString()
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
@@ -59,7 +84,8 @@ class OnlineConversationClient {
 
         // Secondary fallback: Direct GET query
         runCatching {
-            val encodedPrompt = URLEncoder.encode(prompt, "UTF-8")
+            val queryText = if (imageNote.isNullOrBlank()) prompt else "$prompt ($imageNote)"
+            val encodedPrompt = URLEncoder.encode(queryText, "UTF-8")
             val getUrl = "https://text.pollinations.ai/$encodedPrompt?model=openai"
             val conn = (URL(getUrl).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
